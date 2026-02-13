@@ -1,0 +1,511 @@
+---
+title: "MeterLearning_Motor Questionnaires"
+Me: Ségolène M. R. Guérin
+output: html_notebook
+---
+
+# Preamble
+
+```{r, warning=FALSE, message=FALSE, include = FALSE}
+# ------ CLEANING R SESSION ####
+rm(list=ls()) # clean environment window
+graphics.off() # clean plot window
+
+# ------ PACKAGE LOADING ####
+library(here) # to load data in the project data folder
+library(stringr) # to remove characters from strings
+library(tidyverse) # to tidy data
+library(rstatix) # to have summary statistics
+library(ggplot2) # to plot data
+library(lme4) # to add build a mixed-effect linear model
+library(GGally) # to draw parallel plots
+library(tidyr) # to format 
+library(MetBrewer) # to have new color palettes
+library(knitr) # to avoid cropped figures when knitting
+library(svglite) # to export .svg figure
+library(writexl, openxlsx) # to write Excel files
+library(readxl) # to read Excel file
+library(eeptools) # to compute age
+library(ggridges) # for ridge plots
+
+# ------ FUNCTION AND EXTERN FILES CALL ####
+source(here("r_functions/plots.R"))
+source(here("r_functions/calc_age.R"))
+
+# ------ Load participants file
+participant_pool <- 
+  read_excel(here("participants_final_pool.xlsx"))
+
+# ------ PATHS ####
+# ------ Indicate export path
+output_dir <- 
+  gsub("1_code/", "",
+       here("2_output/plots/demographics/"))
+```
+
+# Load data
+
+```{r}
+# ------ DATA LOADING
+# ------ Indicate data path
+data_path = 
+  gsub("1_code/", "",
+       here("0_data/"))
+
+# ------ Load data
+data_file <- 
+  suppressWarnings(read_excel(
+    paste0(data_path, "meterlearning-motor_questionnaires.xlsx"),
+    col_types = c(replicate(4, "guess"), "text", 
+                  replicate(2, "guess"), "numeric", 
+                  replicate(2, "guess"), "numeric", "guess",
+                  "numeric", replicate(4, "guess"), 
+                  replicate(3, "numeric"), replicate(2, "guess"),
+                  "text", "numeric", "text", "numeric",
+                  "text", "numeric", "text", "numeric",
+                  "text", "numeric", replicate(5, "guess"), "text")
+  ))
+
+# Keep only relevant participants
+data_file <- 
+  data_file[which(data_file$sub %in% 
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+# Fix format
+data_file$birth_data <- as.Date(data_file$birth_data, format = "%d/%m/%Y")
+data_file[c(2:4, 6:7, 9:10, 12, 14:17, 21:22, 33:37)] <-
+  lapply(data_file[c(2:4, 6:7, 9:10, 12, 14:17, 21:22, 33:37)], factor)
+
+# ------ Compute age
+data_file$birth_data <- calc_age(data_file$birth_data, Sys.Date())
+colnames(data_file)[5] <- "age"
+```
+
+# Plot
+
+## Genre
+
+```{r}
+# ------ GENRE
+# ------ Compute contingency table
+freq_data_group <- as.data.frame(table(data_file$genre))  
+freq_data_group_cond <- 
+  as.data.frame(table(data_file$cond, data_file$genre))
+
+# ------ African
+ggplot(freq_data_group_cond, aes(fill = Var2, y = Freq, x = Var1)) + 
+  geom_bar(position = "fill", stat = "identity") +
+  geom_text(aes(label = Freq), size = 5, hjust = 0.5, vjust = 3, 
+            colour = "white", position = "fill") +
+  # facet_grid(. ~ Var2,
+  #            labeller = as_labeller(c("2" = "Three-beat", "3" = "Four-beat"))) +
+  labs(subtitle = "Number of women and men per group and condition",
+       y = "Frequency",
+       x = "Movement Condition",
+       fill = "Genre") +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat"),) +
+  scale_fill_manual(labels = c("Women", "Men"),
+                    values = met.brewer("Tam", 2)) +
+  apa7
+
+# Save
+name_file <- c("african_genre.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 22, height = 28, units = "cm", scale = 0.5)
+
+# ------ Plot all
+# ggplot(freq_data_group, aes(fill = Var2, y = Freq, x = Var1)) + 
+#   geom_bar(position = "fill", stat = "identity") +
+#   geom_text(aes(label = Freq), size = 5, hjust = 0.5, vjust = 3, 
+#             colour = "white", position = "fill") +
+#   labs(subtitle = "Number of women and men per group",
+#        y = "Frequency",
+#        x = "Group",
+#        fill = "Genre") +
+#   scale_x_discrete(labels = c("African", "Western")) +
+#   scale_fill_manual(labels = c("Women", "Men"),
+#                     values = met.brewer("Tam", 2)) +
+#   apa7
+# 
+# ggplot(freq_data_group_cond, aes(fill = Var3, y = Freq, x = Var1)) + 
+#   geom_bar(position = "fill", stat = "identity") +
+#   geom_text(aes(label = Freq), size = 5, hjust = 0.5, vjust = 3, 
+#             colour = "white", position = "fill") +
+#   facet_grid(. ~ Var2,
+#              labeller = as_labeller(c("2" = "Three-beat", "3" = "Four-beat"))) +
+#   labs(subtitle = "Number of women and men per group and condition",
+#        y = "Frequency",
+#        x = "Group",
+#        fill = "Genre") +
+#   scale_x_discrete(labels = c("African", "Western"),) +
+#   scale_fill_manual(labels = c("Women", "Men"),
+#                     values = met.brewer("Tam", 2)) +
+#   apa7
+```
+
+## Age
+
+```{r}
+# ------ AGE
+# ------ Plot
+ggplot(data_file, aes(x = age, y = cond, fill = cond)) +
+  geom_density_ridges() +
+  # facet_grid(. ~ cond,
+  #            labeller = as_labeller(c("2" = "Three-beat", "3" = "Four-beat"))) +
+  scale_fill_manual(values = met.brewer("Egypt", 2)) +
+  labs(subtitle = "Age distribution accross group and condition",
+       y = "Movement Condition",
+       x = "Age") +
+  scale_y_discrete(labels = c("Three-beat", "Four-beat")) +
+  guides(fill = "none") +
+  apa7
+
+# Save
+name_file <- c("african_age.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 22, height = 28, units = "cm", scale = 0.5)
+```
+## Country
+
+```{r}
+# ------ COUNTRY
+# ------ Participants' home country
+# Keep only one country where necessary
+data_file$q1 = as.vector(gsub("(.*),.*", "\\1", data_file$q1))
+data_file$q1 = as.vector(gsub("(.*),.*", "\\1", data_file$q1))
+
+# Fix country name
+for (i in which(data_file$q1 == "Congo")){
+  data_file$q1[i] = "République Démocratique du Congo"
+}
+
+# Compute contingency table
+freq_data_group <- as.data.frame(table(data_file$group, data_file$q1))  
+freq_data_group_cond <- 
+  as.data.frame(table(data_file$group, data_file$cond, data_file$q1))
+
+# Rename
+levels(freq_data_group$Var2)[levels(freq_data_group$Var2) == 
+                               "République Démocratique du Congo"] <- "RDC"
+
+# Plot
+ggplot(freq_data_group, aes(x = Var2, y = Freq)) +
+  geom_segment(
+    aes(x = Var2, xend = Var2, y = 0, yend = Freq), 
+    color = ifelse(freq_data_group$Var2 %in% c("Cameroun"), "firebrick", 
+                   ifelse(freq_data_group$Var2 %in% c("Belgique") & 
+                            freq_data_group$Var1 %in% c("2"), 
+                          "blue4", "grey40")), 
+    size = ifelse(freq_data_group$Var2 %in% c("Cameroun") & 
+                    freq_data_group$Var1 %in% c("1"), 1.3, 
+                  ifelse(freq_data_group$Var2 %in% c("Belgique") & 
+                           freq_data_group$Var1 %in% c("2"), 1.3, 0.7))
+  ) +
+  geom_point(
+    color = ifelse(freq_data_group$Var2 %in% c("Cameroun") & 
+                     freq_data_group$Var1 %in% c("1"), "firebrick", 
+                   ifelse(freq_data_group$Var2 %in% c("Belgique") & 
+                            freq_data_group$Var1 %in% c("2"),
+                          "blue4", "grey40")),
+    size = ifelse(freq_data_group$Var2 %in% c("Cameroun") & 
+                    freq_data_group$Var1 %in% c("1"), 5, 
+                  ifelse(freq_data_group$Var2 %in% c("Belgique") & 
+                           freq_data_group$Var1 %in% c("2"), 5, 2))
+  ) +
+  # facet_grid(. ~ Var1,
+  #            labeller = as_labeller(c("1" = "African", "2" = "Western"))) +
+  coord_flip() +
+  labs(subtitle = "Participants' home country per group",
+       y = "Number of participants",
+       x = "Home country") +
+  apa7
+
+# ------ Participants' parents home country
+# Keep only one country where necessary
+data_file$q3_parent1 = as.vector(gsub("(.*),.*", "\\1", data_file$q3_parent1))
+data_file$q3_parent2 = as.vector(gsub("(.*),.*", "\\1", data_file$q3_parent2))
+
+for (i in which(data_file$q3_parent1 == "Congo")){
+  data_file$q3_parent1[i] = "République Démocratique du Congo"
+}
+
+for (i in which(data_file$q3_parent2 == "Congo")){
+  data_file$q3_parent2[i] = "République Démocratique du Congo"
+}
+
+
+# Merge data from the two parents
+data_parents = data_file[, c(1:3, 10, 12)]
+
+# Remove additional country
+# data_parents$q3_parent2[38] = 
+#   as.vector(gsub("(.*),.*", "\\1", data_parents$q3_parent2[38]))
+# data_parents$q3_parent2[62] = 
+#   as.vector(gsub("(.*),.*", "\\1", data_parents$q3_parent2[62]))
+data_parents$q3_parent2[24] =
+  as.vector(gsub("(.*),.*", "\\1", data_parents$q3_parent2[24]))
+data_parents$q3_parent2[24] = "République Démocratique du Congo"
+
+
+# Tidy data
+data_parents <- data_parents %>%
+  gather(key = parent, value = country, -sub, -group, -cond)
+
+# Compute contingency table
+freq_data_group_parents <- 
+  as.data.frame(table(data_parents$group, data_parents$country))
+
+# Rename
+levels(freq_data_group_parents$Var2)[levels(freq_data_group_parents$Var2) == 
+                               "République Démocratique du Congo"] <- "RDC"
+
+# Plot
+ggplot(freq_data_group_parents, aes(x = Var2, y = Freq)) +
+  geom_segment(
+    aes(x = Var2, xend = Var2, y = 0, yend = Freq), 
+    color = ifelse(freq_data_group_parents$Var2 %in% c("Cameroun") & 
+                     freq_data_group_parents$Var1 %in% c("1"), "firebrick", 
+                   ifelse(freq_data_group_parents$Var2 %in% c("Belgique") & 
+                            freq_data_group_parents$Var1 %in% c("2"),
+                          "blue4", "grey40")), 
+    size = ifelse(freq_data_group_parents$Var2 %in% c("Cameroun") & 
+                    freq_data_group_parents$Var1 %in% c("1"), 1.3, 
+                  ifelse(freq_data_group_parents$Var2 %in% c("Belgique") & 
+                           freq_data_group_parents$Var1 %in% c("2"), 1.3, 0.7))
+  ) +
+  geom_point(
+    color = ifelse(freq_data_group_parents$Var2 %in% c("Cameroun") & 
+                     freq_data_group_parents$Var1 %in% c("1"), "firebrick", 
+                   ifelse(freq_data_group_parents$Var2 %in% c("Belgique") & 
+                            freq_data_group_parents$Var1 %in% c("2"),
+                          "blue4", "grey40")),
+    size = ifelse(freq_data_group_parents$Var2 %in% c("Cameroun") & 
+                    freq_data_group_parents$Var1 %in% c("1"), 5, 
+                  ifelse(freq_data_group_parents$Var2 %in% c("Belgique") & 
+                           freq_data_group_parents$Var1 %in% c("2"), 5, 2))
+  ) +
+  # facet_grid(. ~ Var1,
+  #            labeller = as_labeller(c("1" = "African", "2" = "Western"))) +
+  coord_flip() +
+  labs(subtitle = "Participants' parents home country per group",
+       y = "Number of participants",
+       x = "Home country") +
+  apa7
+
+# ------ Merged plot
+# Extract data
+data_merged <- data.frame()
+
+for (participant in 1:nrow(data_file)){
+  if (data_file$group[participant] == 1){
+    if (data_file$q1[participant] == "Belgique" | 
+        data_file$q1[participant] == "France"){
+      temp_data <- data_file[participant, c(1:3, 10, 12)]
+      colnames(temp_data) <- c("sub", "group", "cond", "country_1", "country_2")
+      data_merged <- rbind(data_merged, temp_data)
+    }else{
+      temp_data <- cbind(data_file[participant, c(1:3, 7)],
+                         data_file[participant, 7]) # twice to match number of column
+      colnames(temp_data) <- c("sub", "group", "cond", "country_1", "country_2")
+      data_merged <- rbind(data_merged, temp_data)
+    }
+  }
+}
+
+# Remove useless column
+data_merged <- data_merged[, c(1, 3:5)]
+
+# Tidy data
+data_merged <- data_merged %>%
+  gather(key = parent, value = country, -sub, -cond)
+
+# Compute contingency table
+freq_data_data_merged <- 
+  as.data.frame(table(data_merged$country))
+
+# Rename
+levels(freq_data_data_merged$Var1)[levels(freq_data_data_merged$Var1) == 
+                               "République Démocratique du Congo"] <- "RDC"
+
+# Plot
+ggplot(freq_data_data_merged, aes(x = Var1, y = Freq)) +
+  geom_segment(
+    aes(x = Var1, xend = Var1, y = 0, yend = Freq), 
+    color = ifelse(freq_data_data_merged$Var1 %in% c("RDC"),
+                   "firebrick","grey40"), 
+    size = ifelse(freq_data_data_merged$Var1 %in% c("RDC"), 1.3, 0.7)
+  ) +
+  geom_point(
+    color = ifelse(freq_data_data_merged$Var1 %in% c("RDC"),
+                   "firebrick", "grey40"),
+    size = ifelse(freq_data_data_merged$Var1 %in% c("RDC"), 5, 2)
+  ) +
+  coord_flip() +
+  labs(subtitle = "Participants'  or participants' parents home country",
+       y = "Number of Participants",
+       x = "Home Country") +
+  apa7
+
+# Save
+name_file <- c("african_country.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 35, height = 20, units = "cm", scale = 0.5)
+```
+
+## Rhythm familiarity
+
+### Difficulty to clap
+
+```{r}
+# ------ RYTHME FAMILIARITY
+freq_data_group <- as.data.frame(table(data_file$q12))
+# freq_data_group$Var1 <-
+#   factor(freq_data_group$Var2 , levels = c("0", "25", "50", "75", "100"))
+freq_data_group$Var1 <-
+  factor(freq_data_group$Var1 , levels = c("50", "25", "0"))
+freq_data_group <- rbind(freq_data_group[3, ],
+                         freq_data_group[2, ],
+                         freq_data_group[1, ])
+
+# Compute percentages
+freq_data_group$fraction = freq_data_group$Freq / sum(freq_data_group$Freq)
+
+# Compute the cumulative percentages (top of each rectangle)
+freq_data_group$ymax = cumsum(freq_data_group$fraction)
+
+# Compute the bottom of each rectangle
+freq_data_group$ymin = c(0, head(freq_data_group$ymax, n = -1))
+
+# Compute label position
+freq_data_group$labelPosition <- 
+  (freq_data_group$ymax + freq_data_group$ymin) / 2
+
+# ------ Plot
+ggplot(freq_data_group,
+       aes(ymax = ymax, ymin = ymin,
+           xmax = 4, xmin = 3, fill = Var1)) +
+  geom_rect() +
+  geom_label(x = 3.5,
+             aes(y = labelPosition, label = Freq),
+             colour = "white", size = 6,
+             show.legend = FALSE) +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = c(met.brewer("OKeeffe2", 5)[3],
+                               met.brewer("OKeeffe2", 5)[4], 
+                               met.brewer("OKeeffe2", 5)[5]),
+                    labels = c("50%", "75%", "100% (very much)")) +
+  xlim(c(2, 4)) +
+  labs(title = "African participants") +
+  theme_void()
+
+# Save
+name_file <- c("african_rhythm_ease.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 28, height = 22, units = "cm", scale = 0.5)
+```
+
+### Likeability
+
+```{r}
+# ------ RYTHME FAMILIARITY
+# ------ Compute contingency table
+# Extract data
+freq_data_group <- as.data.frame(table(data_file$q13))
+freq_data_group$Var1 <-
+  factor(freq_data_group$Var1 , levels = c(0, 25, 50, 75, 100))
+
+# Re-order the data
+freq_data_group <- freq_data_group %>%
+  arrange(Var1)
+
+# Compute percentages
+freq_data_group$fraction = freq_data_group$Freq / sum(freq_data_group$Freq)
+
+# Compute the cumulative percentages (top of each rectangle)
+freq_data_group$ymax = cumsum(freq_data_group$fraction)
+
+# Compute the bottom of each rectangle
+freq_data_group$ymin = c(0, head(freq_data_group$ymax, n = -1))
+
+# Compute label position
+freq_data_group$labelPosition <- 
+  (freq_data_group$ymax + freq_data_group$ymin) / 2
+
+# ------ Plot
+ggplot(freq_data_group,
+       aes(ymax = ymax, ymin = ymin,
+           xmax = 4, xmin = 3, fill = Var1)) +
+  geom_rect() +
+  geom_label(x = 3.5,
+             aes(y = labelPosition, label = Freq),
+             colour = "white", size = 6,
+             show.legend = FALSE) +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = met.brewer("OKeeffe2", 5),
+                    labels = c("0% (not at all)",
+                               "25%", "50%", "75%",
+                               "100% (very much)")) +
+  xlim(c(2, 4)) +
+  labs(title = "African participants") +
+  theme_void()
+
+# Save
+name_file <- c("african_rhythm_likeability.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 28, height = 22, units = "cm", scale = 0.5)
+```
+
+### Strangeness
+
+```{r}
+# ------ RYTHME FAMILIARITY
+# ------ Compute contingency table
+# Extract data
+freq_data_group <- as.data.frame(table(data_file$q14))
+# freq_data_group$Var1 <-
+#   factor(freq_data_group$Var1 , levels = c("0", "25", "50", "75", "100"))
+freq_data_group$Var1 <-
+  factor(freq_data_group$Var1 , levels = c("100", "75", "50", "25", "0"))
+
+# Re-order the data
+freq_data_group <- freq_data_group %>%
+  arrange(Var1)
+
+# Compute percentages
+freq_data_group$fraction = freq_data_group$Freq / sum(freq_data_group$Freq)
+
+# Compute the cumulative percentages (top of each rectangle)
+freq_data_group$ymax = cumsum(freq_data_group$fraction)
+
+# Compute the bottom of each rectangle
+freq_data_group$ymin = c(0, head(freq_data_group$ymax, n = -1))
+freq_data_group$ymin = c(0, head(freq_data_group$ymax, n = -1))
+
+# Compute label position
+freq_data_group$labelPosition <- 
+  (freq_data_group$ymax + freq_data_group$ymin) / 2
+
+# ------ Plot
+ggplot(freq_data_group,
+       aes(ymax = ymax, ymin = ymin,
+           xmax = 4, xmin = 3, fill = Var1)) +
+  geom_rect() +
+  geom_label(x = 3.5,
+             aes(y = labelPosition, label = Freq),
+             colour = "white", size = 6,
+             show.legend = FALSE) +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = met.brewer("OKeeffe2", 5),
+                    labels = c("0% (not at all)",
+                               "25%", "50%", "75%",
+                               "100% (very much)")) +
+  xlim(c(2, 4)) +
+  labs(title = "African participants") +
+  theme_void()
+
+# Save
+name_file <- c("african_rhythm_familiarity.svg")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 28, height = 22, units = "cm", scale = 0.5)
+```

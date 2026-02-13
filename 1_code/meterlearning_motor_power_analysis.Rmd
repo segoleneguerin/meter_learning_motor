@@ -1,0 +1,232 @@
+---
+title: "Power Analysis"
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+# ------ CLEANING R SESSION ####
+rm(list=ls()) # clean environment window
+graphics.off() # clean plot window
+
+# ------ PACKAGE LOADING ####
+library(pwr) # for t test and correlation
+library(WebPower) # for ANOVA
+```
+
+# Required sample size
+
+The EEG and behavioural results of [Chemin et al. (2014)](https://doi.org/10.1177/0956797614551161) are used as parameters.
+
+## EEG-response amplitude
+
+### H1a & H3a: Main effect of the session (pre vs. post)
+
+```{r session effect}
+pwr.t.test(n = NULL,
+           d = 1.53,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H1b & H3b: Movement Condition x Session interaction
+
+```{r}
+# Movement Condition x Session interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 learning type
+           nm = 2, # 2 sessions
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the movement condition
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H5a: Group x Metre Frequency interaction
+
+```{r}
+# Group x Metre Frequency interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 groups
+           nm = 2, # 2 metre frequencies
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the metre frequency
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H6a: Group x Metre Frequency interaction
+
+```{r}
+# Group x Metre Frequency interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 groups
+           nm = 2, # 2 metre frequencies
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the group
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "two.sample",
+           alternative = "greater")
+```
+
+### H7a: Group x Movement Condition interaction
+
+```{r}
+# Group x Movement Condition interaction effect
+wp.kanova(n = NULL,
+          ng = 4, # 2 groups x 2 movement conditions
+          ndf = 1,
+          f = 0.89,
+          alpha = 0.02,
+          power = 0.90)
+
+# Simple effect of the group
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "two.sample",
+           alternative = "greater")
+```
+
+## Clapping-response amplitude
+
+### H2a & H4a: Main effect of the session (pre vs. post)
+
+```{r}
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H2b & H4b: Movement Condition x Session interaction
+
+```{r}
+# Movement Condition x Session interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 learning type
+           nm = 2, # 2 sessions
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the movement condition
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H5a: Group x Metre Frequency interaction
+
+```{r}
+# Group x Metre Frequency interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 groups
+           nm = 2, # 2 metre frequencies
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the metre frequency
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater")
+```
+
+### H6b: Group x Metre Frequency interaction
+
+```{r}
+# Group x Metre Frequency interaction effect
+wp.rmanova(n = NULL,
+           ng = 2, # 2 groups
+           nm = 2, # 2 metre frequencies
+           f = 0.89,
+           alpha = 0.02,
+           power = 0.90,
+           nscor = 1, # non-sphericity correction coefficient
+           type = 2)  # "0" for between-effect; "1" for within-effect; and "2" for interaction effect
+
+# Simple effect of the group
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "two.sample",
+           alternative = "greater")
+```
+
+### H7b: Group x Movement Condition interaction
+
+```{r}
+# Group x Movement Condition interaction effect
+wp.kanova(n = NULL,
+          ng = 4, # 2 groups x 2 movement conditions
+          ndf = 1,
+          f = 0.89,
+          alpha = 0.02,
+          power = 0.90)
+
+# Simple effect of the group
+pwr.t.test(n = NULL,
+           d = 1.77,
+           power = 0.90,
+           sig.level = 0.02,
+           type = "two.sample",
+           alternative = "greater")
+```
+
+# SESOI
+
+The smallest effect size of interest (SESOI) is computed using the small-telescopes approach based on [Chemin et al. (2014)](https://doi.org/10.1177/0956797614551161).
+
+```{r}
+pwr.t.test(n = 14,
+           d = NULL,
+           power = 0.33,
+           sig.level = 0.02,
+           type = "paired",
+           alternative = "greater") # "greater" for t test SESOI; "two.sided" for TOST SESOI
+```

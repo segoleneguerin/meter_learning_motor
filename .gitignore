@@ -4,8 +4,6 @@
 *.html
 *.asv
 output_experiment
-stimuli
-sounds
 *.mat
 *.lw6
 *.lw7
@@ -19,3 +17,5 @@ urear_wrapper
 *.tsv
 *.png
 *.svg
+!1_code/ica_gui_data.mat
+!1_code/stimuli/stimuli_bembe.mat
