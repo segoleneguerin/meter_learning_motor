@@ -16,10 +16,12 @@ The associated rawn and processed data can be found [here](https://zenodo.org/do
 | Requirements  |      Version      |
 |---------------|:-----------------:|
 | Matlab   		|     >= R2020a		|
-| PsychoToolBox |         3		    |
-| CPP_BIDS		|       1.0.0		|
-| LetsWave		|       6 & 7		|
+| [PsychoToolBox](https://github.com/Psychtoolbox-3) |         3		    |
+| [CPP_BIDS](https://github.com/cpp-lln-lab/CPP_BIDS)		|       1.0.0		|
+| [LetsWave](https://github.com/NOCIONS/letswave6)		|       6 & 7		|
 | [rnb_tools](https://github.com/TomasLenc/rnb_tools)		|       1			|
+| R   			|     >= 4.4.1		|
+| R Studio   	|  >= 2024.09.0+375	|
 
 
 ## Project structure
@@ -46,7 +48,7 @@ The associated rawn and processed data can be found [here](https://zenodo.org/do
 │   ├── lib
 │   │   ├── CPP_BIDS
 │   │   ├── letswave6-master
-│   │   ...
+│   │   ├── ...
 │   │   └── PTB
 │   ├── matlab_plotting_functions
 │   │   ├── meterlearning_motor_paper_figures_clap_spectra.m
@@ -65,7 +67,7 @@ The associated rawn and processed data can be found [here](https://zenodo.org/do
 │   ├── r_functions
 │   │   ├── calc_age.R
 │   │   ├── guess_delim.R
-│   │   ...
+│   │   ├── ...
 │   │   └── plots.R
 │   ├── record_smt.m
 │   ├── sounds
@@ -76,7 +78,7 @@ The associated rawn and processed data can be found [here](https://zenodo.org/do
 │   └── stimuli
 │       ├── carrier_for_calibration_bembe.wav
 │    	├── stimuli_bembe.mat
-│    	...
+│    	├── ...
 │    	└── track-bembe_gridIOI-0.200s_eventType-tone.wav
 └── 2_output
     ├── checks
