@@ -1,0 +1,10 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+During motor training, please instruct the participant to:
+
+	1. Synchronise their stepping and clapping movements to the tracker overlaid on the rhythm.
+
+	2. Continue the stepping and clapping movements at the end of each trial once the tracker stopped.
+
+
+=> press SPACE when ready

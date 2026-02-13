@@ -1,0 +1,16 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	       ... WELCOME TO THE TRAINING PART ...
+
+
+
+Before you start, please make sure that: 
+
+	1. The participant can ear the auditory stimulation (use GUI)
+
+	2. The triggers are working fine (use GUI)
+
+
+
+=> press SPACE to launch the GUI

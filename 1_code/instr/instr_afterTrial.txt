@@ -1,0 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+	... SOUND PLAYBACK FINISHED ...
+
+
+	-> to set volume, press L (launch GUI)
+
+	-> to start next trial, press SPACE (the playback will not start yet)
+
+	-> to repeat the current trial, press R
+
+	-> to exit the experiment, press E
+

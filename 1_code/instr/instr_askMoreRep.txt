@@ -1,0 +1,7 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+CONGRATULATIONS, YOU COMPLETED ALL THE TRIALS…
+
+	-> to continue and end the experiment, press E
+
+	-> to add one more whole run, press R

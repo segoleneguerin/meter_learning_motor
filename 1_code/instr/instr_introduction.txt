@@ -1,0 +1,24 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+There will be 2 types of trials: listening and clapping.
+
+
+During LISTENING trials, please instruct the participant to:
+
+	1. Relax, sit back and enjoy the sound.
+
+	2. Prevent any movement synchronised with the rhythm
+	   (e.g. air-tapping their toes).
+
+	3. Keep their eyes fixated on a point when the sound is on.
+
+
+During CLAPPING trials, please instruct the participant to:
+
+	1. Clap the steady pulse of rhythm, similar 
+	   to tapping their foot or bobbing their head to music.
+
+	2. They can move other part of their body if this is of any help.
+
+
+=> press SPACE when ready

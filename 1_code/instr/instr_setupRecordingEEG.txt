@@ -1,0 +1,25 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+		... START EEG RECORDING ...
+
+
+
+Please setup a new EEG recording and start acquisition in ActiView. 
+
+Make sure the signal is clean. 
+
+-> 64 channels (10/20 standard, A+B inputs)
+-> +2 electrodes on mastoids (plug left into EXT1 and right into EXT2)
+-> accelerometer (Ergo input)
+
+
+When setting up recording, make sure you select: 
+
+	-> subset A+B (this saves the 64 EEG channels)
+	-> with 8 Ex (this saves all EXT channels)
+	-> with Sens (this saves the Ergo inputs)
+
+
+Recording filename: 
+
