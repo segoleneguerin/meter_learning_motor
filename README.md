@@ -8,7 +8,8 @@
 
 ## General info
 Scripts for the MeterLearning_Motor project.
-The Stage 1 manuscript and associated pilot data can be found [here](https://zenodo.org/doi/10.5281/zenodo.10221480).
+This is a programmatic registered report that received in-principle acceptance by PCI-RR: [https://rr.peercommunityin.org/articles/rec?id=646](https://rr.peercommunityin.org/articles/rec?id=646)
+The associated rawn and processed data can be found [here](https://zenodo.org/doi/10.5281/zenodo.10221480).
 
 Note that to run the `meterlearning_motor_create_stimuli.m` script, you need to add a .wav file (to build the tracker) in the `sounds` folder. 
 You can request this .wav file to the owner of this repository.
@@ -18,7 +19,7 @@ You can request this .wav file to the owner of this repository.
 
 | Requirements  |      Version      |
 |---------------|:-----------------:|
-| Matlab   		|     >= R2022a		|
+| Matlab   		|     >= R2020a		|
 | PsychoToolBox |         3		    |
 | CPP_BIDS		|       1.0.0		|
 | LetsWave		|       6 & 7		|
