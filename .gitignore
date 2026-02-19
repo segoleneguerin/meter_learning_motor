@@ -19,3 +19,4 @@ urear_wrapper
 *.svg
 !1_code/ica_gui_data.mat
 !1_code/stimuli/stimuli_bembe.mat
+!1_code/matlab_plotting_functions/banner_spec.mat

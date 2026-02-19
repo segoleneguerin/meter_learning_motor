@@ -5,7 +5,6 @@ function meterlearning_motor_paper_figures_iri_ses1
 % Get parameters file
 params = meterlearning_motor_get_params();
 i_ses = 1;
-plot_type = 'scatter'; % 'scatter' or 'boxchart'
 
 % figure parameters
 fig_size = [1 1 5.8 4];
@@ -17,7 +16,7 @@ labels_linewidth = 0.6;
 grid_linewidth = 0.5;
 plot_linewidth = 0.3;
 colors = {repmat(0.7,1,3),[201 92 46]./256,[49 112 183]./256,'k'};
-% colors = {'','#008A69','#DB5829','#1964B0'};
+
 
 
 for i_grp = 1:2
@@ -65,36 +64,17 @@ for i_grp = 1:2
     median_iri      = median_iri(sorted_idx);
     quantile_iri    = quantile_iri(sorted_idx,:); 
     
-    %% ---- BOXCHART
-    if strcmp(plot_type,'boxchart')
-
-        for i_sub = 1:size(iri,1)
-
-            % select iri for each participant
-            iri_to_plot = iri(i_sub, :);
-            iri_to_plot = iri_to_plot(~isnan(iri_to_plot));
-
-            xPos = repmat(i_sub, numel(iri_to_plot),1);
-            boxchart(xPos, iri_to_plot, ...
-                        'MarkerStyle','none', ...
-                        'WhiskerLineStyle','none', ...
-                        'LineWidth', plot_linewidth, ...
-                        'BoxFaceColor','k'); hold on              
-        end
-    else
     %% ---- MEDIAN + INTER QUARTILE INTERVALS    
- 
-        for participant = 1:length(median_iri)
+    for participant = 1:length(median_iri)
 
-            % plot scatter points
-            scatter(participant, median_iri(participant),'MarkerFaceColor','k', ...
-                                                         'MarkerEdgeColor','k', ...
-                                                         'SizeData',5); hold on % 10 in non-compressed version
-            % plot quartiles                                          
-            line([participant participant],[quantile_iri(participant,1) quantile_iri(participant,2)],...
-                 'Color','k')             
-        end           
-    end    
+        % plot scatter points
+        scatter(participant, median_iri(participant),'MarkerFaceColor','k', ...
+                                                     'MarkerEdgeColor','k', ...
+                                                     'SizeData',5); hold on 
+        % plot quartiles                                          
+        line([participant participant],[quantile_iri(participant,1) quantile_iri(participant,2)],...
+             'Color','k')             
+    end               
     
     %% ---- LAYOUT
 
@@ -117,12 +97,7 @@ for i_grp = 1:2
     end
 
     %% ---- TRAINING BANNERS
-    
-    % Small patch to cover axis line    
-%     patch([0.5-1 40.5+1 40.5+1 0.5-1], ...
-%           [1.4+0.01 1.4+0.01 1.78+0.1 1.78+0.1], 'w', ...
-%           'EdgeColor','none', 'Clipping','off')       
-    
+        
     % ses 3
     xb = [0.5 40.5 40.5 0.5];
     yb = [1.6 1.6 1.78 1.78]; 
@@ -150,7 +125,7 @@ for i_grp = 1:2
         mkdir(export_path);
     end
     
-    fig_name = sprintf('Fig1a - grp%i - ses%i - %s.svg', i_grp, i_ses, plot_type);
+    fig_name = sprintf('Fig1a - grp%i - ses%i.svg', i_grp, i_ses);
     print(gcf,'-dsvg','-painters',fullfile(export_path,fig_name))
     
     close all

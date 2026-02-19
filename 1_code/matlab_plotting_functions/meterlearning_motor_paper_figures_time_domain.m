@@ -5,7 +5,7 @@ function meterlearning_motor_paper_figures_time_domain
 params = meterlearning_motor_get_params();
 
 % figure parameters
-fig_size            = [1 1 3 2.5]; % [1 1 4 2.5] for non compressed
+fig_size            = [1 1 3 2.5]; 
 fontname            = 'Arial';
 labels_fontsize     = 7;
 labels_fontweight   = 'normal';
@@ -19,12 +19,8 @@ colors = {repmat(0.7,1,3),[201 92 46]./256,[49 112 183]./256,'k'};
 
 %% ---- LOAD DATA
 
-% preproc_style = "conservative";
-% ref_method    = "mastoids";
-% average_method = "cluster";  
-
 % Neural data
-path        = fullfile(params.server_path, '2_output/data/4_final/eeg/grp_comparison_time_domain/');
+path        = fullfile(params.path_output, 'data/4_final/eeg/grp_comparison_time_domain/');
 filename    = 'grp_comparison_time_domain.mat';
 load(fullfile(path,filename))
 
@@ -33,7 +29,7 @@ time    = [0: 1/fs : params.pattern_dur];
 
 %% ---- LOAD STIM
 
-path     = fullfile(params.experiment_path,'1_code/stimuli');
+path     = fullfile(params.experiment_path,'2_output/data/4_final/stimuli');
 filename = 'stimuli_bembe.mat';
 load(fullfile(path, filename)); 
 stim_env = stim.track.env;
@@ -125,7 +121,7 @@ for i_grp = 1:2
             % ---- BANNERS      
       
             % load banner specificities
-            load(fullfile(params.path_plot,'paper','banner_spec.mat'));             
+            load(fullfile(params.experiment_path,'1_code/matlab_plotting_functions','banner_spec.mat'));             
             ensureBannerSpace(gca, spec, 2, max_all,  0.02)
             ax = gca;  xl = xlim(ax); xw = diff(xl);
             
@@ -191,7 +187,7 @@ for i_grp = 1:2
         % ---- Eeg 
         s_mean_cond = mean(s_mean(i_grp, i_ses, 2:3, :),3);
         
-        plot(time,squeeze(s_mean_cond(i_grp,i_ses,:,:)), ...
+        plot(time,squeeze(s_mean_cond), ...
                 'Color','k', 'LineWidth',grid_linewidth)        
             
         % ---- layout
@@ -207,13 +203,8 @@ for i_grp = 1:2
         line(x_limit,[0 0],'Color','k','LineWidth',labels_linewidth)
         line([0 0],y_limit,'Color','k','LineWidth',labels_linewidth)
 
-        % ---- BANNERS
-%         patch([-0.01 2.4 2.4 -0.01], ...
-%           [1.9213+0.18 1.9213+0.18 3.7 3.7], 'w', ...
-%           'EdgeColor','none', 'Clipping','off')  
-              
-        % load banner specificities
-        load(fullfile(params.path_plot,'paper','banner_spec.mat'));             
+        % ---- BANNERS 
+        % load banner specificities            
         ensureBannerSpace(gca, spec, 2, max_all,  0.02)
         ax = gca;  xl = xlim(ax); xw = diff(xl);
 
@@ -305,61 +296,3 @@ function yb = bannerY(spec, ax, row)
     end
     yb = [y0 y0 y1 y1];
 end
-
-% function dmax = getAxisDataMax(ax)
-% % Robustly get max Y from plotted data, ignoring patches/text (banners).
-%     dmax = -inf;
-%     objs = findall(ax);
-%     keepTypes = {'line','scatter','stem','bar','boxchart'};
-%     for h = objs'
-%         if ~isgraphics(h), continue; end
-%         t = get(h,'Type');
-%         if ~any(strcmp(t, keepTypes)), continue; end
-%         if isprop(h,'YData')
-%             y = h.YData;
-%             if ~isempty(y), dmax = max(dmax, max(y(:))); end
-%         end
-%     end
-%     if isinf(dmax)
-%         dmax = ax.YLim(2);  % fallback
-%     end
-% end
-
-% function addTopBanner(ax, rgb, alpha, labelText, banner_spec)
-% % addTopBanner Draws a top banner with the same relative size as a reference.
-% %   ax           : target axes handle
-% %   rgb          : 1x3 color (0-1)
-% %   alpha        : scalar FaceAlpha (0..1)
-% %   labelText    : string for centered text
-% %   banner_spec  : struct with fields:
-% %                  banner_height_rel, top_pad_rel, left_pad_rel, right_pad_rel
-% 
-%     if nargin < 5 || isempty(banner_spec)
-%         error('addTopBanner:MissingSpec','banner_spec is required.');
-%     end
-% 
-%     % Axes geometry
-%     yl = ylim(ax); yh = diff(yl);
-%     xl = xlim(ax); xw = diff(xl);
-% 
-%     % Compute banner rectangle in data units
-%     y1 = yl(2) - yh * banner_spec.top_pad_rel;                 % top of banner
-%     y0 = y1     - yh * banner_spec.banner_height_rel;          % bottom of banner
-%     x0 = xl(1)  + xw * banner_spec.left_pad_rel;
-%     x1 = xl(2)  - xw * banner_spec.right_pad_rel;
-% 
-%     xb = [x0 x1 x1 x0];
-%     yb = [y0 y0 y1 y1];
-% 
-%     % Draw
-%     patch('Parent',ax, 'XData',xb, 'YData',yb, 'FaceColor',rgb, ...
-%           'EdgeColor','none', 'FaceAlpha',alpha, ...
-%           'Clipping','on', 'HandleVisibility','off', 'Tag','TopBanner');
-% 
-%     % Label
-%     text(mean([x0 x1]), mean([y0 y1]), labelText, ...
-%         'Parent',ax, 'HorizontalAlignment','center', ...
-%         'VerticalAlignment','middle', 'FontWeight','bold', ...
-%         'FontName', ax.FontName, 'FontSize', ax.FontSize, ...
-%         'Color','k', 'Clipping','on', 'HitTest','off');
-% end

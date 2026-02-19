@@ -23,7 +23,7 @@ x = [1.6 2.2 3.3 3.9];
 
 %% STIMULUS
 
-tbl_stim = readtable('/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_av/0_data/stimuli/stimulus_zscore.csv');
+tbl_stim = readtable(fullfile(params.path_output,'data/4_final/stimuli/stimulus_zscore.csv'));
 
 for i_cond = 2:3
     
@@ -56,8 +56,8 @@ end
 for i_grp = 1:2
     
     %% ---- LOAD DATA (FROM R WITH OUTLIER CORRECTION)
-    path_z_scores_motor   = '/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_motor/2_output/plots/paper';
-    filename_motor        = ['data_file_eeg_grp',num2str(i_grp),'_analysis_type',num2str(analysis_type),'_outliers_corrected.csv'];
+    path_z_scores_motor   = fullfile(params.path_output,'data/4_final/eeg/z_score_fft/outliers_correction');
+    filename_motor        = ['data_file_eeg_grp',num2str(i_grp),'_analysis_type',num2str(analysis_type),'_outliers_corrected.csv'];  
     tbl_z_scores_motor    = readtable(fullfile(path_z_scores_motor,filename_motor)); 
  
     % name of the dependant variable

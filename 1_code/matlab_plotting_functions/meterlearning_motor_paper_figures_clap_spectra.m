@@ -138,7 +138,7 @@ for i_grp = 1:2
             %% ---- TRAINING BANNERS
             
             % load banner specificities
-            load(fullfile(params.path_plot,'paper','banner_spec.mat'));            
+            load(fullfile(params.experiment_path,'1_code/matlab_plotting_functions','banner_spec.mat'));  
             
             % session
             if i_ses == 1

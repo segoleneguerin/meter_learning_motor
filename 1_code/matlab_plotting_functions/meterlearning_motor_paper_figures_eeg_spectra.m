@@ -12,7 +12,7 @@ ref_method      = 'mastoids';
 cluster_chan    = {'F1', 'Fz', 'F2', 'FC1', 'FCz', 'FC2', 'C1', 'Cz', 'C2'};
 
 % figure parameters
-fig_size            = [1 1 3 2]; % [1 1 4 2.5] for non compressed 
+fig_size            = [1 1 3 2]; 
 fontname            = 'Arial';
 labels_fontsize     = 7;
 labels_fontweight   = 'normal';
@@ -21,7 +21,6 @@ training_labels_fontweight ...
 labels_linewidth    = 0.6;
 grid_linewidth      = 0.5;
 plot_linewidth      = 0.3;
-% colors              = {'','#008A69','#DB5829','#1964B0'};
 colors = {repmat(0.7,1,3),[201 92 46]./256,[49 112 183]./256,'k'};
 
 
@@ -59,8 +58,7 @@ if process_data
                     import_path = fullfile(params.path_output, 'data/3_preprocessed/', ...
                                             sprintf('grp-%03d', i_grp), ...
                                             sprintf('cond-%03d', i_cond), ...
-                                            sprintf('sub-%03d', i_sub), 'eeg/', ...
-                                            'conservative');
+                                            sprintf('sub-%03d', i_sub), 'eeg');
 
                     filename = sprintf('grp-%03d_cond-%03d_sub-%03d_ses-%03d_ref-%s_cleaned-fft-values-per-channel.csv', ...
                                         i_grp, i_cond, i_sub, i_ses, ref_method);
@@ -114,11 +112,11 @@ if process_data
     end
     
     %% SAVE STRUCTURE
-    export_path = fullfile(params.path_output, 'data/4_final/eeg/z_score_fft/conservative');
+    export_path = fullfile(params.path_output, 'data/4_final/eeg');
     save(fullfile(export_path,'eeg_fft.mat'), 'eeg_fft') 
     
 else
-    export_path = fullfile(params.path_output, 'data/4_final/eeg/z_score_fft/conservative');
+    export_path = fullfile(params.path_output, 'data/4_final/eeg');
     load(fullfile(export_path,'eeg_fft.mat'))    
 end
     
@@ -185,7 +183,7 @@ for i_grp = 1:2
             
             % ---- BANNERS
             % load banner specificities
-            load(fullfile(params.path_plot,'paper','banner_spec.mat'));             
+            load(fullfile(params.experiment_path,'1_code/matlab_plotting_functions','banner_spec.mat'));            
             ensureBannerSpace(gca, spec, 2, max_all,  0.02)
             ax = gca;  xl = xlim(ax); xw = diff(xl);
             

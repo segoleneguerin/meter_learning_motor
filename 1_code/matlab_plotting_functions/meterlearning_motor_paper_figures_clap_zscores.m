@@ -22,7 +22,7 @@ x = [1.6 2.2 3.3 3.9];
 
 %% STIMULUS
 
-tbl_stim = readtable('/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_av/0_data/stimuli/stimulus_zscore.csv');
+tbl_stim = readtable(fullfile(params.path_output,'data/4_final/stimuli/stimulus_zscore.csv'));
 
 for i_cond = 2:3
     
@@ -54,7 +54,7 @@ end
 for i_grp = 1:2
     
     %% ---- LOAD DATA (FROM R WITH OUTLIER CORRECTION)
-    path_z_scores_motor   = '/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_motor/2_output/plots/paper';
+    path_z_scores_motor   = fullfile(params.path_output,'data/4_final/clap/z_score/outliers_correction');
     filename_motor        = ['data_file_clap_grp',num2str(i_grp),'_analysis_type',num2str(analysis_type),'_outliers_corrected.csv'];
     tbl_z_scores_motor    = readtable(fullfile(path_z_scores_motor,filename_motor)); 
 
@@ -151,18 +151,13 @@ for i_grp = 1:2
     if (analysis_type == 1 && i_grp == 1) || (analysis_type == 3 && i_grp == 1)
 
         yMax = max(ylim);
-        y = yMax + 0.09*range(ylim);  % yMax + 0.065*range(ylim); 
+        y = yMax + 0.09*range(ylim); 
         y_bottom = 0.3;
         tick_positions(1) = mean(x([1,2]));
         tick_positions(2) = mean(x([3,4]));
         xL = tick_positions(2 - 1);
         xR = tick_positions(2);
-        
-        % main brackets 
-        % plot([xL xL xR xR],[y y+0.1*y y+0.1*y y],'k','LineWidth',plot_linewidth,'HandleVisibility','off');
-%         text(mean([xL xR]), y+0.025*y, '***', 'HorizontalAlignment','center', ...
-%                  'VerticalAlignment','bottom','FontSize',labels_fontsize+2);   
-        
+
         % sub brackets
         plot([xL-y_bottom xL-y_bottom xL+y_bottom xL+y_bottom],[y-0.1*y y y y-0.1*y],'k','LineWidth',plot_linewidth,'HandleVisibility','off');
         plot([xR-y_bottom xR-y_bottom xR+y_bottom xR+y_bottom],[y-0.1*y y y y-0.1*y],'k','LineWidth',plot_linewidth,'HandleVisibility','off');
@@ -197,7 +192,7 @@ for i_grp = 1:2
             lowest_4_beat   = -1 - z_stim(3);
             highest_4_beat  = 1 - z_stim(3);
         end
-        %line([x(1)-0.3 x(1)-0.3],[lowest_3_beat highest_3_beat],'Color', colors{2} ,'LineWidth',grid_linewidth+0.2)
+        
         line([x(2)+0.3 x(2)+0.3],[lowest_3_beat highest_3_beat],'Color', colors{2} ,'LineWidth',grid_linewidth+0.2)
         line([x(3)-0.3 x(3)-0.3],[lowest_4_beat highest_4_beat],'Color', colors{3} ,'LineWidth',grid_linewidth+0.2)
     end

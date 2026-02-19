@@ -189,21 +189,8 @@ if figure_number == 1
             spec.split_left_rel   = (max(xb2) - xl(1)) / xw;   % right edge of LEFT banner
             spec.split_right_rel  = (min(xb3) - xl(1)) / xw;   % left edge of RIGHT banner
             
-            save(fullfile(params.path_plot,'paper','banner_spec.mat'), 'spec');
-                  
-            %% ---- REMOVE Y-AXIS AT THE LEVEL OF THE BANNER   
-            
-%             % Small patch to cover axis line
-%             all_x = [xb1, xb2, xb3];
-%             all_y = [yb1, yb2, yb3];
-%             
-%             x_min = min(all_x);
-%             y_min = min(all_y);
-%             y_max = max(all_y);
-%             
-%             patch([x_min-1 x_min x_min x_min-1], [y_min+0.01 y_min+0.01 y_max+0.1 y_max+0.1], 'w', ...
-%                   'EdgeColor','none', 'Clipping','off')            
-
+            save(fullfile(params.experiment_path,'1_code/matlab_plotting_functions','banner_spec.mat'), 'spec');
+                           
             %% ---- PRINT
 
             export_path = fullfile(params.path_plot,'paper');    
