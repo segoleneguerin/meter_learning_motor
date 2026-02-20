@@ -234,7 +234,9 @@ for trial = 1:params.nb_trial
     if participant == 18 && trial == 1 || participant == 19 && trial == 1 || ...
             participant == 26 && trial == 1 || participant == 88 && trial == 10 || ...
             participant == 89 && trial == 9 || participant == 92 && trial == 3 || ...
-            participant == 92 && trial == 4
+            participant == 92 && trial == 4 || participant == 69 && trial == 5 || ...
+            participant == 69 && trial == 6 || participant == 69 && trial == 7 || ...
+            participant == 15 && trial == 1 || participant == 17 && trial == 1 
         
     elseif length(locs_sound_sec) ~= length(locs_sec)
 
@@ -408,6 +410,8 @@ for trial = 1:params.nb_trial
 
         % Round sound matrix (useful is additional sounds were included)
         locs_sound_sec = round(locs_sound_sec, 3);
+    else
+        
 
     end
     
@@ -460,7 +464,6 @@ for trial = 1:params.nb_trial
         mean_asynch = NaN; 
         std_asynch  = NaN;
         r_asynch    = NaN;
-         
         
     else
         try

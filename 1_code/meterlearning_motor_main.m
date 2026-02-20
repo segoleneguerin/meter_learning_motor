@@ -37,8 +37,8 @@ disp_stim_zscore = false;
 %% ---- RUN PROCESSING AND ANALYSIS SCRIPTS
 
 % % ---- Data preparation
-for participant = 30 % params.all_part
-    
+for participant = params.all_part
+   
     meterlearning_motor_source_to_raw(participant);
     
     meterlearning_motor_clean_raw(participant);
@@ -47,7 +47,7 @@ end
 
 % ---- Clapping data
 % Note: SMT file for sub-011 is missing
-for participant = 30%params.all_part
+for participant = params.all_part
 
     meterlearning_motor_compute_smt(participant);
     
@@ -62,14 +62,16 @@ for participant = 30%params.all_part
 end
 
 % ---- Stepping data
-for participant = 24% params.all_part
+for participant = [22, 25, 27]
+    
 
     meterlearning_motor_process_step(participant);
 
 end
 
+
 % ---- EEG data
-for participant = 24% params.all_part
+for participant = params.all_part
 
     meterlearning_motor_eeg_filter(participant);
 
@@ -91,7 +93,7 @@ end
 
 meterlearning_motor_IC_inspection(participant)
 
-for participant = 24% params.all_part
+for participant = params.all_part
 
     meterlearning_motor_remove_ics(participant);
 
@@ -116,33 +118,33 @@ end
 
 % BEHAVIOURAL DATA
     % IRI
-    % meterlearning_motor_paper_figures_iri_ses1
+    meterlearning_motor_paper_figures_iri_ses1
 
-    % meterlearning_motor_paper_figures_iri_ses1_3
+    meterlearning_motor_paper_figures_iri_ses1_3
 
     % spectra
-    % meterlearning_motor_paper_figures_clap_spectra(analysis_type)
+    meterlearning_motor_paper_figures_clap_spectra(analysis_type)
 
     % zscores 
-    % meterlearning_motor_paper_figures_clap_zscores(analysis_type, ...
-    %                                                normalization, ...
-    %                                                disp_stim_zscore)
+    meterlearning_motor_paper_figures_clap_zscores(analysis_type, ...
+                                                   normalization, ...
+                                                   disp_stim_zscore)
     
-    % meterlearning_motor_paper_figures_clap_zscores_main_effect_cond(analysis_type, ...
-    %                                                normalization, ...
-    %                                                disp_stim_zscore)  
+    meterlearning_motor_paper_figures_clap_zscores_main_effect_cond(analysis_type, ...
+                                                   normalization, ...
+                                                   disp_stim_zscore)  
     
 % NEURAL DATA
     % ERP
-    % meterlearning_motor_paper_figures_time_domain
+    meterlearning_motor_paper_figures_time_domain
 
     % spectra
-    % meterlearning_motor_paper_figures_eeg_spectra(analysis_type)
-    % meterlearning_motor_paper_figures_topoplots(analysis_type)
+    meterlearning_motor_paper_figures_eeg_spectra(analysis_type)
+    meterlearning_motor_paper_figures_topoplots(analysis_type)
 
     % zscores
-    % meterlearning_motor_paper_figures_eeg_zscores(analysis_type, ...
-    %                                               normalization, ...
-    %                                               disp_stim_zscore)
+    meterlearning_motor_paper_figures_eeg_zscores(analysis_type, ...
+                                                  normalization, ...
+                                                  disp_stim_zscore)
     
     

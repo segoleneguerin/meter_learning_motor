@@ -13,7 +13,7 @@
 %
 % Authors 
 % -------
-% Ségolène M. R. Guérin
+% Ségolène M. R. Guérin & Emmanuel Coulon
 % July 02, 2024
 % RnB-Lab (Institute of Neuroscience, UCLouvain)
 %
@@ -46,12 +46,19 @@ trial_dur_conti = params.tempi/1000 * ....
 pattern_dur = (params.tempi/1000 * params.n_events_per_pattern);
 
 % Create an empty matrix to store the data
-tbl_iri_error = cell2table(cell(0, 6), ...
+tbl_iri_error = cell2table(cell(0, 7), ...
     'VariableNames', {'group', 'condition', 'participant', 'session', ...
-    'trial', 'iri_error'});
-tbl_asynch = cell2table(cell(0, 6), ...
+    'trial', 'mean_iri_error','median_iri_error'});
+tbl_asynch = cell2table(cell(0, 8), ...
     'VariableNames', {'group', 'condition', 'participant', 'session', ...
-    'trial', 'signed_asynchrony'});
+    'trial', 'signed_asynchrony','std_asynch','r_asynch'});
+
+
+path_asynch = fullfile(params.path_output, 'data/4_final/step/asynchrony/'); 
+if isfile(fullfile(path_asynch,'step_asynch_ses-002.mat'))
+    load(fullfile(path_asynch,'step_asynch_ses-002.mat'))
+end
+
 
 %% ---- LOAD THE DATA
 % Set path for the current participant
@@ -69,6 +76,7 @@ file_name = sprintf('grp-%03d_cond-%03d_sub-%03d_task-meterlearning-motor_sessio
 
 % Resize data to have a 2-D matrix
 data_accelerometer = squeeze(data);
+
 
 %% ---- EXTRACT RELEVANT DATA
 for trial = 1:(params.nb_trial) % for each trial
@@ -94,10 +102,11 @@ for trial = 1:(params.nb_trial) % for each trial
             participant == 94
         current_trial = -current_trial;
     end
-
+    
     %% ---- EXTRACT STEPS
     % Extract axis number
-    axis_number = table2array(axis_file(participant, 4));
+    sub_idx = find(table2array(axis_file(:,1))==participant);
+    axis_number = table2array(axis_file(sub_idx, 4));
 
     % Find step location (arbitrary threshold)
     if condition == 2
@@ -114,8 +123,8 @@ for trial = 1:(params.nb_trial) % for each trial
         'MinPeakHeight', min_pk_height); % on either side of the signal
 
     % Convert peaks location from data points to seconds
-    locs_sec = locs / (1/header.xstep);
-
+    locs_sec = locs / (1/header.xstep);    
+    
     %% ---- RECREATE TRACKER SOUND PATTERN
     % Recreate tracker sound pattern
     if condition == 2
@@ -150,16 +159,16 @@ for trial = 1:(params.nb_trial) % for each trial
     peak_amp = peak_amp(1:length(locs_sec));
 
     % Keep only one sound over two
-    if participant == 32
-        if trial < 7
-            locs_sound_sec = locs_sound_sec;
-        else
-            locs_sound_sec = locs_sound_sec(1:2:end);
-        end
-    else
-        locs_sound_sec = locs_sound_sec(1:2:end);
-    end
-
+%     if participant == 32
+%         if trial < 7
+%             locs_sound_sec = locs_sound_sec;
+%         else
+%             locs_sound_sec = locs_sound_sec(1:2:end);
+%         end
+%     else
+%         locs_sound_sec = locs_sound_sec(1:2:end);
+%     end
+    
     %% ---- CHECK IF THE STEP FINDING WAS CORRECTLY EXECUTED
     % Remove continuation
     time_vector = 1:length(current_trial(:, axis_number));
@@ -169,290 +178,120 @@ for trial = 1:(params.nb_trial) % for each trial
     [locs_sec, peak_amp] = tap_corrector(time_vector, (1/header.xstep), ...
         tracker * 80000, current_trial(:, axis_number), locs_sec, peak_amp, ...
         final_length, participant, group, condition, trial);
-
-    % If the sound and clap matrices have not the same length
-    if length(locs_sound_sec) ~= length(locs_sec)
-        waitfor(msgbox("Warning: the sound and step matrices have not the same length, please double check for any missing/extra step."))
+    
+    if any(diff(locs_sec)>1.9) % arbitrary value above the halftime of the slowest target pace
+        waitfor(msgbox("Warning: There is an abnormally long inter-response-interval. Please check once more."))
         [locs_sec, peak_amp] = tap_corrector(time_vector, (1/header.xstep), ...
             tracker * 100000, current_trial(:, axis_number), locs_sec, peak_amp, ...
             final_length, participant, group, condition, trial);
     end
-
-    %% ---- IN CASE THE SOUND AND STEP MATRICES HAVE NOT THE SAME LENGTH
-    if length(locs_sound_sec) ~= length(locs_sec)
-
-        % Match step with closest sound
-        for step = 1:length(locs_sec)
-            [~, idx_check(step)] = ...
-                min(abs(locs_sec(step)-locs_sound_sec));
-        end
-
-        % If the first clap is missing
-        if idx_check(1) > 1
-
-            locs_sound_sec = locs_sound_sec(idx_check(1):end);
-            locs_sound = locs_sound(idx_check(1):end);
-
-        end
-
-    end
-
-    % In case the sound and step matrices STILL have not the same length
-    if length(locs_sound_sec) ~= length(locs_sec)
-
-        % Match clap with closest sound
-        for step = 1:length(locs_sec)
-            [~, idx_check(step)] = ...
-                min(abs(locs_sec(step)-locs_sound_sec));
-        end
-
-        % Find which sound numbers are not matching steps
-        idx_check_diff = diff(idx_check);
-
-        while isempty(find(idx_check_diff ~= 1, 1, 'first')) == false
-            
-            to_remove = find(idx_check_diff ~= 1, 1, 'first') + 1;
-            
-            % If ONE additionnal sound
-            if idx_check_diff(to_remove - 1) == 2
-
-                % Extract the two possible additional sounds
-                vec_idx_sound = [locs_sound_sec(to_remove), ...
-                    locs_sound_sec(to_remove + 1)];
-
-                % Find the farthest sound to the step
-                [~, idx_sound] = max(abs(locs_sec(to_remove)-vec_idx_sound));
-
-                % Remove additional sound
-                if idx_sound == 1
-                    locs_sound_sec(to_remove) = NaN;
-                elseif idx_sound == 2
-                    locs_sound_sec(to_remove + 1) = NaN;
-                end
-
-            end
-
-            % If TWO additionnal sounds
-            if idx_check_diff(to_remove - 1) == 3
-
-                % Extract the three possible additional sounds
-                vec_idx_sound = [locs_sound_sec(to_remove), ...
-                    locs_sound_sec(to_remove + 1), ...
-                    locs_sound_sec(to_remove + 2)];
-
-                % Find the closest sound to the step
-                [~, idx_sound] = min(abs(locs_sec(to_remove)-vec_idx_sound));
-
-                % Remove additional sounds
-                if idx_sound == 1
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                elseif idx_sound == 2
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                elseif idx_sound == 3
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                end
-
-            end
-
-            % If THREE additionnal sounds
-            if idx_check_diff(to_remove - 1) == 4
-
-                % Extract the three possible additional sounds
-                vec_idx_sound = [locs_sound_sec(to_remove), ...
-                    locs_sound_sec(to_remove + 1), ...
-                    locs_sound_sec(to_remove + 2), ...
-                    locs_sound_sec(to_remove + 3)];
-
-                % Find the closest sound to the step
-                [~, idx_sound] = min(abs(locs_sec(to_remove)-vec_idx_sound));
-
-                % Remove additional sounds
-                if idx_sound == 1
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                elseif idx_sound == 2
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                elseif idx_sound == 3
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                elseif idx_sound == 4
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                end
-
-            end
-
-            % If FOUR additionnal sounds
-            if idx_check_diff(to_remove - 1) == 5
-
-                % Extract the three possible additional sounds
-                vec_idx_sound = [locs_sound_sec(to_remove), ...
-                    locs_sound_sec(to_remove + 1), ...
-                    locs_sound_sec(to_remove + 2), ...
-                    locs_sound_sec(to_remove + 3), ...
-                    locs_sound_sec(to_remove + 4)];
-
-                % Find the closest sound to the step
-                [~, idx_sound] = min(abs(locs_sec(to_remove)-vec_idx_sound));
-
-                % Remove additional sounds
-                if idx_sound == 1
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                    locs_sound_sec(to_remove + 4) = NaN;
-                elseif idx_sound == 2
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                    locs_sound_sec(to_remove + 4) = NaN;
-                elseif idx_sound == 3
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                    locs_sound_sec(to_remove + 4) = NaN;
-                elseif idx_sound == 4
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 4) = NaN;
-                elseif idx_sound == 5
-                    locs_sound_sec(to_remove) = NaN;
-                    locs_sound_sec(to_remove + 1) = NaN;
-                    locs_sound_sec(to_remove + 2) = NaN;
-                    locs_sound_sec(to_remove + 3) = NaN;
-                end
-
-            end
-
-            % If ONE additionnal step
-            if idx_check_diff(to_remove - 1) == 0
-
-                % Add an additional sound
-                locs_sound_sec = [locs_sound_sec(1:to_remove - 1); ...
-                    locs_sound_sec(to_remove - 1) + 0.0001; ... % add a tiny bit of time 
-                    % so idx_check match steps with the right sound
-                    locs_sound_sec(to_remove:end)];
-
-            end
-
-            % Remove rows with NaN
-            locs_sound_sec(any(isnan(locs_sound_sec), 2), :) = [];
-
-            % Match step with closest sound
-            for step = 1:length(locs_sec)
-                [~, idx_check(step)] = ...
-                    min(abs(locs_sec(step)-locs_sound_sec));
-            end
-
-            % Find which sound numbers are not matching steps
-            idx_check_diff = diff(idx_check);
-
-        end
-
-        % If additionnal sounds AFTER the last synchro step
-        if length(locs_sound_sec) > length(locs_sec)
-
-            % Remove additional steps at the end
-            locs_sound_sec(find(locs_sound_sec > floor(locs_sec(end)) + 0.5)) = NaN;
-
-            % Remove rows with NaN
-            locs_sound_sec(any(isnan(locs_sound_sec), 2), :) = [];
         
-        end
-
-        % Round sound matrix (useful is additional sounds were included)
-        locs_sound_sec = round(locs_sound_sec, 3);
-
-    end
     
-    % Empty vector
-    clear idx_check idx_check_diff to_remove
+    %% ----- BUILD BINARY TIME SERIES
+
+    % Create an empty matrix
+    time_series = zeros(length(time_vector), 1);
+    
+    % replace stepping locations (with possible corrections) 
+    locs = dsearchn(time_vector',locs_sec);
+    
+    % Indicate where claps are located
+    time_series(locs) = 1;
+    
+    % Add time
+    time_series = ...
+        [(1/params.fs_stim: ...
+        (1/params.fs_stim): ...
+        (length(time_vector)/params.fs_stim))', ...
+        time_series];    
+    
+    % Transform in table
+    time_series = array2table(time_series, ...
+        'VariableNames', {'time', 'ampl'});    
+    
+    % Save
+    export_path = fullfile(params.path_output, 'data/2_segmented/', ...
+        sprintf('grp-%03d/cond-%03d/sub-%03d/step/', ...
+        group, condition, participant)); 
+    
+    if ~isfolder(export_path)
+        mkdir(export_path)
+    end
+
+    writetable(time_series, fullfile(export_path, ...
+        sprintf('grp-%03d_cond-%03d_sub-%03d_ses-%03d_trial-%02d_binary.csv', ...
+        group, condition, participant, 2, trial)));      
+    
 
      %% ---- COMPUTE ASYNCHRONY
-    % Compute signed asynchrony
-    % negative = too early; positive = too late
-    if length(locs_sound_sec) ~= length(locs_sec)
-        mean_asynch = NaN;
-    else
-        asynch = locs_sec - locs_sound_sec;
-        mean_asynch = mean(asynch);
-    end
+     
+    % find grid target closest to steps
+    closest_locs_sound_idx = dsearchn(locs_sound_sec, locs_sec);
     
-    if length(locs_sound_sec) > length(locs_sec) + 4 || ... % too many sounds compared to claps
-       length(locs_sec) > length(locs_sound_sec) + 1        % too many claps compared to sounds
-       
-        mean_asynch = NaN;       
-        
-    elseif participant == 2 && trial == 14 || participant == 3 && trial == 3 || ...
-            participant == 3 && trial == 4 || participant == 3 && trial == 7 || ...
-            participant == 3 && trial == 14 || participant == 4 && trial == 1 || ...
-            participant == 4 && trial == 7 || participant == 4 && trial == 9 || ...
-            participant == 4 && trial == 10 || participant == 4 && trial == 12 || ...
-            participant == 4 && trial == 15 || participant == 4 && trial == 17
-
-        mean_asynch = NaN;
-
-    else
-        try
-            asynch = locs_sec - locs_sound_sec;
-            mean_asynch = mean(asynch);
-        catch
-            fprintf('Asynchrony couldn''t be computed for participant %i and trial %i', participant, trial)
-            mean_asynch = NaN;
-        end
-    end
-
-    % Organise data
+    % get asynchrony between steps and closest grid target
+    asynch = locs_sec - locs_sound_sec(closest_locs_sound_idx);
+    
+    % mean, standard deviation and vector strength(circular statistics)
+    mean_asynch = mean(asynch);
+    std_asynch  = std(asynch);
+    r_asynch    = meterlearning_motor_asynch_vector_strength(participant, asynch, locs_sound_sec);   
+    
+    % organise data    
     new_row = [...
-        repmat({group}, 1, 1), ... % group
-        repmat({condition}, 1, 1), ... % condition
+        repmat({group}, 1, 1), ...      % group
+        repmat({condition}, 1, 1), ...  % condition
         repmat({participant}, 1, 1), ... % participant
-        repmat({2}, 1, 1), ... % session
-        repmat({trial}, 1, 1), ... % trial
-        num2cell(mean_asynch) ... % asynchrony
-        ];
+        repmat({2}, 1, 1), ...          % session
+        repmat({trial}, 1, 1), ...      % trial
+        num2cell(mean_asynch), ...      % asynchrony
+        num2cell(std_asynch), ...       % std of the asynchrony
+        num2cell(r_asynch)];            % vector strength of the asynchrony      
 
-    % Store data
+    % store data
     tbl_asynch = [tbl_asynch; new_row];
     
+    % additionally store the series of asynchronies in a structure
     grp_name    = sprintf('grp%03d', group);
-    cond_name   = sprintf('cond%03 d', condition);
+    cond_name   = sprintf('cond%03d', condition);
     sub_name    = sprintf('sub%03d', participant);
     trial_name  = sprintf('trial%i', trial);
     
-    Asynch.(grp_name).(cond_name).(sub_name).(trial_name) = asynch;    
-
+    Asynch.(grp_name).(cond_name).(sub_name).(trial_name) = asynch;     
+    
+    
     %% ---- COMPUTE IRI ERROR
-    % Compute inter-response intervals
-    if participant == 32
-        if trial < 7
-            iri = diff(locs_sec);
-        else
-            iri = diff(locs_sec)/2;
+    
+    % compute inter-response-interval
+    iri = diff(locs_sec);
+    
+    % select target inter-onset-interval of the target closest to each iri
+    % (some participants stepped back and forth thus stepping at the grid
+    % target pace, and some participants stepped by lifting each leg
+    % independantly thus dividing the grid target pace by two. Both are
+    % totally correct)
+    
+    % compute iri absolute error
+    for i_iri = 1:length(iri)
+        
+        if condition == 2
+            target_IOI = 0.8;
+        elseif condition == 3
+            target_IOI = 0.6;
         end
-    else
-        iri = diff(locs_sec)/2;
+        
+        iri_error_classic   = (abs(iri(i_iri) - target_IOI) / target_IOI) .* 100;
+        iri_error_halftime  = (abs(iri(i_iri) - (target_IOI*2)) / (target_IOI*2)) .* 100;
+        
+        iri_error(i_iri) = min([iri_error_classic, iri_error_halftime]);
+        
+        % fprintf('iri: %0.3f, classic: %0.3f, halftime: %0.3f, selected: %0.3f \n',round(iri(i_iri),3), iri_error_classic, iri_error_halftime, iri_error(i_iri))
+        
     end
-
-    % Compute absolute IRIerror
-    if condition == 2
-        iri_error = (abs(iri - 0.800) / 0.800) .* 100 ; % duple
-    elseif condition == 3
-        iri_error = (abs(iri - 0.600) / 0.600) .* 100 ; % triple
-    end
-
+    
     % Compute mean IRIerror
     mean_iri = mean(iri_error);
-
+    med_iri = median(iri_error);
+    
     % Organise data
     new_row = [...
         repmat({group}, 1, 1), ... % group
@@ -461,11 +300,13 @@ for trial = 1:(params.nb_trial) % for each trial
         repmat({2}, 1, 1), ... % session
         repmat({trial}, 1, 1), ... % trial
         num2cell(mean_iri) ... % iri error
+        num2cell(med_iri) ... % iri error
         ];
 
     % Store data
-    tbl_iri_error = [tbl_iri_error; new_row];
-
+    tbl_iri_error = [tbl_iri_error; new_row];    
+    
+    
     %% ---- PLOT
     % Plot iri error
     subplot(2,1,1);
@@ -510,8 +351,8 @@ for trial = 1:(params.nb_trial) % for each trial
     end
 
     saveas(gcf, fullfile(path_plot, name_plot));
-
-
+     
+     
     % Plot asynchrony
     subplot(2,1,1);
     plot(current_trial(:, 3), 'Color', [0 0.4470 0.7410 0.05])
@@ -538,8 +379,6 @@ for trial = 1:(params.nb_trial) % for each trial
         subplot(2,1,2)
         plot(asynch, '.-', ...
             'MarkerSize', 15)
-        %     xline((length(asynch) - n_step_conti), '--', ...
-        %         'Color', [0 0 0], 'LineWidth', 1);
         yline(0, '--r', 'LineWidth', 2)
         ylabel('Signed Asychrony', 'fontweight', 'bold', ...
             'fontsize', 12);
@@ -560,9 +399,10 @@ for trial = 1:(params.nb_trial) % for each trial
         mkdir(path_plot)
     end
 
-    saveas(gcf, fullfile(path_plot, name_plot));
-
+    saveas(gcf, fullfile(path_plot, name_plot));     
+    
 end
+
 
 %% ---- EXPORT
 % Save data
@@ -587,7 +427,10 @@ writetable(tbl_iri_error, fullfile(export_path_iri_error, export_name_iri_error)
 writetable(tbl_asynch, fullfile(export_path_asynch, export_name_asynch));
 
 % Save asynch structure
-save(fullfile(export_path_asynch,'clap_asynch_ses-002.mat'),'Asynch')
+save(fullfile(export_path_asynch,'step_asynch_ses-002.mat'),'Asynch')
 
 % Close plot window
 close all
+
+end
+

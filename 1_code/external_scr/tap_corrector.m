@@ -32,9 +32,9 @@ function [claps, peak_amp] = tap_corrector(timeVec, fs, stimulus, clapping_signa
 
 % Plot figure
 figure('Position',[1 1 1200 800], 'Color', [1 1 1], 'Name','Check taps to add/remove')
-plot(timeVec, stimulus,'k', 'LineWidth', 1); hold on
+plot(timeVec, stimulus,'k', 'LineWidth', 1, 'Color', [0.6 0.6 0.6]); hold on
 plot(timeVec, clapping_signal,'r', 'LineWidth', 1.5)
-xline(trial_dur, '--', 'Color', [0.7 0.7 0.7], 'LineWidth', 1);
+xline(trial_dur, '--', 'Color', 'k', 'LineWidth', 3);
 h1 = scatter(claps, peak_amp, 'b', 'filled');
 set(gca, 'LineWidth', 1.5, 'FontSize', 15, 'TickDir', 'out')
 box off
@@ -68,8 +68,11 @@ while strcmp(qst,'Yes')
         claps(end+1)            = timeVec(selectedRangeIdx(tapIdx2add));
         [claps, clap_order]     = sort(claps);
         peak_amp(end+1)         = tapAmp2add;
-        peak_amp                = peak_amp(clap_order, :);
-
+        try
+            peak_amp                = peak_amp(clap_order, :);
+        catch
+            peak_amp                = peak_amp(:,clap_order);
+        end
     end
 
     delete(h1)
