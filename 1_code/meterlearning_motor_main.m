@@ -62,7 +62,7 @@ for participant = params.all_part
 end
 
 % ---- Stepping data
-for participant = [22, 25, 27]
+for participant = params.all_part
     
 
     meterlearning_motor_process_step(participant);
@@ -81,7 +81,7 @@ end
 
 meterlearning_motor_visual_inspection(participant);
 
-for participant = 24% params.all_part
+for participant = params.all_part
     
     meterlearning_motor_interpolate_bads(participant);
 
@@ -108,7 +108,7 @@ end
 % Control
 % No accelerometer data for sub-007 (ses-001), sub-014 (ses-003), sub-022,
 % (ses-003), sub-043 (ses-003)
-for participant = 24% params.all_part
+for participant = params.all_part
 
     meterlearning_motor_head_movement(participant, 1);
 
