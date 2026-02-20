@@ -1,0 +1,1245 @@
+---
+title: "African-enculturated participants"
+Me: Ségolène M. R. Guérin & Emmanuel Coulon
+Date: "2026-02-12"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+  html_notebook:
+    code_folding: hide
+    toc: yes
+  word_document:
+    toc: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+This is the notebook associated to statistical tests for the African-enculturated participants (Stage 2 #1)
+
+# Preamble
+```{r preamble}
+# ------ CLEANING R SESSION ####
+rm(list=ls()) # clean environment window
+graphics.off() # clean plot window
+
+# ------ PACKAGE LOADING ####
+library(writexl) # to export .xlxs file
+library(readxl) # to read .xlxs file
+library(here) # to load data in the project data folder
+library(dplyr) # to use infix operator %>%
+library(naniar) # to use replace_with_na_all function
+library(pracma) # to have findpeaks functions
+library(tidyr) # to tidy data
+library(rstatix) # to detecte outliers
+library(ggplot2) # to plot data
+library(readxl) # to load excel file
+library(ggpubr) # to build qq plot
+library(lsr) # to compute Cohen's D for pairwise comparisons
+library(matrixStats) # to compute SD over rows
+library(readr) # to load tsv files
+library(MetBrewer) # to have more palettes
+library(ggrepel) # to have label on line chart
+library(svglite) # to export .svg files
+library(moments) # to compute skewness and kurtosis
+library(sur) # to compute standardised skewness
+library(GGally) # for parallel plots
+library(lmerTest) # to build stat model
+library(performance) # to run model checks
+library(lmom)
+library(DescTools) # to winsorize
+library(emmeans)   # for post-hoc comparisons with the GLMs
+library(TOSTER) # for TOST
+library(bestNormalize)
+
+# ------ FUNCTION AND EXTERN FILES CALL ####
+source(here("r_functions/motor_parallel_plot.R"))
+source(here("r_functions/plots.R"))
+source(here("r_functions/calc_age.R"))
+source(here("r_functions/guess_delim.R"))
+
+# ------ PARAMETERS ####
+# ------ Define analysis type
+# 1 = zscore as described in PRR 
+# 2 = normalized zscore                                                       (not used in final manuscript)
+# 3 = normalized zscore corrected by the stim zscore
+# 4 = normalized 2 metRel pour le four beat                                   (not used in final manuscript)
+# 5 = 3beat (1.25, 2.5, 3.75) vs 4beat (1.66, 3.33)
+# 6 = normalized 3beat (1.25, 2.5, 3.75) vs 4beat (1.66, 3.33)                (not used in final manuscript)
+# 7 = normalized 3beat (1.25, 2.5, 3.75) vs 4beat (1.66, 3.33) - stim
+# 8 = (3beat (1.25, 2.5, 3.75) vs 4beat (1.66, 3.33) - stim) * normalization  (not used in final manuscript)
+analysis_type = 1
+
+
+if (analysis_type == 1){
+  dv = "zscore_freq_rel"
+} else if (analysis_type == 2){
+  dv = "norm_zscore_freq_rel"
+} else if (analysis_type == 3){
+  dv = "norm_zscore_freq_rel"
+} else if (analysis_type == 4){
+  dv = "zscore_freq_rel"
+} else if (analysis_type == 5){
+  dv = "zscore_freq_rel"
+} else if (analysis_type == 6){
+  dv = "norm_zscore_freq_rel"  
+} else if (analysis_type == 7){
+  dv = "norm_zscore_freq_rel"
+} else if (analysis_type == 8){
+  dv = "norm_zscore_freq_rel"  
+}
+
+# ------ Load participants file
+participant_pool <- 
+  read_excel(here("participants_final_pool.xlsx"))
+```
+
+
+# H1 – Neural data
+
+## Load data
+
+```{r}
+# ------ H1 ####
+# ------ DATA LOADING
+# ------ Indicate data path
+path_z_scores = 
+  gsub("1_code/","", here("2_output/data/4_final/eeg/z_score_fft/")) 
+
+# ------ List all files
+list_files <- matrix(list.files(path = path_z_scores, pattern = "^grp"),
+                    byrow = TRUE) 
+
+# ------ Load data
+data_file <- data.frame()
+
+for (participant in 1:nrow(list_files)) {
+   
+  participant_file <-  read_csv(paste(path_z_scores, list_files[participant],
+                                      sep = "/"),
+                                show_col_types = FALSE)
+   
+   data_file <- rbind(data_file, participant_file)
+}
+
+# ------ Keep only relevant participants
+data_file <-
+  data_file[which(data_file$participant %in%
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+
+# ------ Keep only relevant data
+if (analysis_type == 1 || analysis_type == 3) { 
+  # # Only keep 2 meter-related frequencies in the four-beat meter
+  data_file <- data_file %>%
+    filter(    
+      (condition == 2 & metrical_interp == 2) |
+        (condition == 3 & metrical_interp == 3))
+  
+}  else if (analysis_type == 5 || analysis_type == 7) { 
+  # 3beat (1.25 2.5 3.75 Hz) and 4beat (1.66 3.33 Hz)
+  data_file <- data_file %>%
+    filter(    
+      (condition == 2 & metrical_interp == 23) |
+        (condition == 3 & metrical_interp == 32))
+}
+
+
+# Subtract stimulus zscore value is needed
+if (analysis_type == 3){
+  for (participant in 1:nrow(data_file)){
+    if (data_file$metrical_interp[participant] == 2){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.192572263128259)
+    } else if (data_file$metrical_interp[participant] == 3){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.317879804131487)}}}
+
+if (analysis_type == 7){
+  for (participant in 1:nrow(data_file)){
+    if (data_file$metrical_interp[participant] == 23){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.243056176623996)
+    } else if (data_file$metrical_interp[participant] == 32){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.181114652805544)}}}
+  
+# ------ Prepare data
+# Keep only relevant data
+data_file <- data_file[ , c(1:4, 6:7)]
+
+# Change data format
+data_file[1:4] <- lapply(data_file[1:4], as.factor)
+```
+
+
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition, session) %>%
+  get_summary_stats(dv,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+
+### Assumptions checks
+
+Normality of residuals and homoscedasticity assumptions are met.
+One outlier is detected.
+
+```{r}
+# ------ Assumptions check
+model <- lmer(as.formula(paste(dv, "~ condition * session + (1 | participant)")), 
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+
+```
+
+#### Outliers correction
+
+The outlier was corrected using Winsorisation (see [Leys et al., 2019](https://biblio.ugent.be/publication/8619726)).
+
+```{r}
+# ------ Deal with outliers
+backup = data_file
+
+if (analysis_type == 1 || analysis_type == 3 || analysis_type == 7) {
+
+  if (analysis_type == 1) { 
+    probs_min = 0
+    probs_max = 0.98 
+  } else if (analysis_type == 3 || analysis_type == 7) {    
+    probs_min = 0
+    probs_max = 0.99    
+  }
+
+  data_file[[dv]] <-
+    Winsorize(data_file[[dv]],
+              val = quantile(data_file[[dv]], probs = c(probs_min, probs_max)))
+    
+  # Print modified rows
+  changed_rows <- data_file[[dv]] != backup[[dv]]
+  
+  changed_rows_number <- which(changed_rows)
+  
+  cbind(line = changed_rows_number, data_file[changed_rows, ])
+  
+  model <- lmer(as.formula(paste(dv, "~ condition * session + (1 | participant)")),
+                data = data_file)
+  check_normality(model)
+  check_outliers(model, method = "zscore")
+}
+
+# save data_file for paper figure (with outlier correction)
+write.csv(data_file, paste0("/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_motor/2_output/plots/paper/data_file_eeg_grp1_analysis_type",analysis_type,"_outliers_corrected.csv"))
+
+```
+
+
+### Inferential
+
+No significant effect. 
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = dv, wid = participant,
+             between = condition,
+             within = session,
+             effect.size = "pes") %>%
+  get_anova_table()
+   
+# GLM
+anova(model, type = 3) 
+effectsize::eta_squared(model)
+
+```
+
+
+## Plot
+
+```{r}
+# ------ PLOT
+# ------ Indicate export path
+output_dir <- 
+  gsub("1_code/", "",
+       here("2_output/plots/eeg/"))
+
+# stim zscores
+  if (analysis_type == 1) {
+    z_stim = c(-0.365, -0.369)
+  } else if (analysis_type == 2) {
+    z_stim = c(-0.193, -0.318)
+  } else if (analysis_type == 3) {
+    z_stim = c(0, 0)
+  } else if (analysis_type == 4) {
+    z_stim = c(-0.365, -0.344)
+  } else if (analysis_type == 5) {
+    z_stim = c(-0.352, -0.344)
+  } else if (analysis_type == 6) {
+    z_stim = c(-0.243, -0.181)
+  } else if (analysis_type == 7) {
+    z_stim = c(0, 0)
+  } else if (analysis_type == 8) {
+    z_stim = c(0, 0)    
+  }
+
+
+# ------ Build plot
+ggplot(data_file,
+       aes(y = .data[[dv]],
+           x = condition,
+           col = session)) +
+  geom_point(aes(y = .data[[dv]]),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = session),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  
+  labs(y = "z scores",
+       x = "Movement Condition",
+       color = "Session",
+       fill = "Session",
+       subtitle = "EEG data") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  annotate("segment", x = 0.6, xend = 1.4, y = z_stim[1], yend = z_stim[1], color = "darkgray", alpha = 0.5) +
+  annotate("segment", x = 1.6, xend = 2.4, y = z_stim[2], yend = z_stim[2], color = "darkgray", alpha = 0.5) +
+  scale_color_manual(values = met.brewer("Java", 2)) +
+  scale_fill_manual(values = met.brewer("Java", 2)) +
+  scale_x_discrete(labels = c("Three beat", "Four beat")) +
+  scale_y_continuous(name = "z scores", breaks = seq(from = -1, to = 1.5, by = 0.5), limits = c(-1.2,1.7)) +
+  apa7
+
+# Save
+name_file <- c("african_eeg_zscores.png")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 35, height = 25, units = "cm", scale = 0.5)
+```
+
+# --------------------------------------
+# H2 – Behaviour data
+
+## Load data
+
+```{r}
+# ------ H2 ####
+# ------ DATA LOADING
+# ------ Indicate data path
+path_z_scores = 
+  gsub("1_code/","", here("2_output/data/4_final/clap/z_score/")) 
+
+# ------ List all files
+list_files <- matrix(list.files(path = path_z_scores, pattern = "^grp"),
+                    byrow = TRUE) 
+
+# ------ Load data
+data_file <- data.frame()
+
+for (participant in 1:nrow(list_files)) {
+   
+  participant_file <-  read_csv(paste(path_z_scores, list_files[participant],
+                                      sep = "/"),
+                                show_col_types = FALSE)
+   
+   data_file <- rbind(data_file, participant_file)
+}
+
+# Keep only relevant participants
+data_file <-
+  data_file[which(data_file$participant %in%
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+# ------ Keep only relevant data
+if (analysis_type == 1 || analysis_type == 3) { 
+  data_file <- data_file %>%
+    filter(    
+      (condition == 2 & metrical_interp == 2) |
+        (condition == 3 & metrical_interp == 3))
+  
+}  else if (analysis_type == 5 || analysis_type == 7) { 
+  # 3beat (1.25 2.5 3.75 Hz) and 4beat (1.66 3.33 Hz)
+  data_file <- data_file %>%
+    filter(    
+      (condition == 2 & metrical_interp == 23) |
+        (condition == 3 & metrical_interp == 32))
+}
+
+# Subtract stimulus zscore value is needed
+if (analysis_type == 3){
+  for (participant in 1:nrow(data_file)){
+    if (data_file$metrical_interp[participant] == 2){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.192572263128259)
+    } else if (data_file$metrical_interp[participant] == 3){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.317879804131487)}}}
+
+
+if (analysis_type == 7){
+  for (participant in 1:nrow(data_file)){
+    if (data_file$metrical_interp[participant] == 23){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.243056176623996)
+    } else if (data_file$metrical_interp[participant] == 32){
+      data_file$norm_zscore_freq_rel[participant] <- 
+        data_file$norm_zscore_freq_rel[participant] - (-0.181114652805544)}}}
+
+# ------ Prepare data
+# Keep only relevant data
+data_file <- data_file[ , c(1:4, 6:7)]
+
+# Change data format
+data_file[1:4] <- lapply(data_file[1:4], as.factor)
+
+```
+
+
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition, session) %>%
+  get_summary_stats(dv, type = "mean_sd")
+print(stat_descr)
+
+```
+
+
+### Assumptions checks
+
+Normality of residuals and homoscedasticity assumptions are met.
+No outliers are detected.
+
+```{r}
+# ------ Assumptions check
+model <- lmer(as.formula(paste(dv, "~ condition * session + (1 | participant)")),
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+
+# save data_file for paper figure
+write.csv(data_file, paste0("/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_motor/2_output/plots/paper/data_file_clap_grp1_analysis_type",analysis_type,"_outliers_corrected.csv"))
+
+```
+
+### Inferential
+
+Significant effect of session.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = dv, wid = participant,
+             between = condition,
+             within = session,
+             covariate = ,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+# GLM
+anova(model, type = 3) 
+effectsize::eta_squared(model)
+
+```
+#### H2a
+
+zclapping will be larger after when compared to before movement.
+
+```{r}
+
+# Data summary 
+data_file %>%
+  group_by(session) %>%
+  get_summary_stats(dv, type = "mean_sd")
+
+# Post-hoc
+data_file %>%
+  t_test(as.formula(paste(dv, "~ session")), paired = TRUE,
+                  p.adjust.method = "bonferroni")
+
+# Effect size
+data_file %>%
+  cohens_d(as.formula(paste(dv, "~ session")),
+           paired = TRUE)
+
+
+# ----- GLM - Estimated Marginal Means
+contrast_model <- emmeans(model, pairwise ~ session, adjust = "bonferroni")
+print(contrast_model)
+eff_size(contrast_model, sigma = sigma(model), edf = 38)
+
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+# ------ Indicate export path
+output_dir <- 
+  gsub("1_code/", "",
+       here("2_output/plots/clap/"))
+
+# stim zscores
+  if (analysis_type == 1) {
+    z_stim = c(-0.365, -0.369)
+  } else if (analysis_type == 2) {
+    z_stim = c(-0.193, -0.318)
+  } else if (analysis_type == 3) {
+    z_stim = c(0, 0)
+  } else if (analysis_type == 4) {
+    z_stim = c(-0.365, -0.344)
+  } else if (analysis_type == 5) {
+    z_stim = c(-0.352, -0.344)
+  } else if (analysis_type == 6) {
+    z_stim = c(-0.243, -0.181)
+  } else if (analysis_type == 7) {
+    z_stim = c(0, 0)
+  } else if (analysis_type == 8) {
+    z_stim = c(0, 0)    
+  }
+
+# ------ Build plot
+ggplot(data_file,
+       aes(y = .data[[dv]],
+           x = condition,
+           col = session)) +
+  geom_point(aes(y = .data[[dv]]),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = session),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  
+  labs(y = "z scores",
+       x = "Movement Condition",
+       color = "Session",
+       fill = "Session",
+       subtitle = "Behavioural data") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  annotate("segment", x = 0.6, xend = 1.4, y = z_stim[1], yend = z_stim[1], color = "darkgray", alpha = 0.5) +
+  annotate("segment", x = 1.6, xend = 2.4, y = z_stim[2], yend = z_stim[2], color = "darkgray", alpha = 0.5) +
+  scale_color_manual(values = met.brewer("Java", 2)) +
+  scale_fill_manual(values = met.brewer("Java", 2)) +
+  scale_x_discrete(labels = c("Three beat", "Four beat")) +
+  apa7
+
+# Save
+name_file <- c("african_clap_zscores.png")
+ggsave(paste(output_dir, name_file, sep = '/'), plot = last_plot(),
+       dpi = 300, width = 35, height = 25, units = "cm", scale = 0.5)
+```
+
+# --------------------------------------
+# Head movement
+
+## Load data
+
+```{r}
+# ------ H1 ####
+# ------ DATA LOADING
+# ------ Indicate data path
+path_z_snr = gsub("1_code/", "",
+       here("2_output/data/4_final/head/z_snr/"))
+
+# ------ List all files
+list_files <- matrix(list.files(path = path_z_snr),
+                    byrow = TRUE) 
+
+# ------ Load data
+data_file <- data.frame()
+
+for (participant in 1:nrow(list_files)) {
+   
+  participant_file <-  read_csv(paste(path_z_snr, list_files[participant],
+                                      sep = "/"),
+                                show_col_types = FALSE)
+   
+   data_file <- rbind(data_file, participant_file)
+}
+
+# ------ Keep only relevant participants
+data_file <- 
+  data_file[which(data_file$participant %in% 
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+# ------ Prepare data
+# Change data format
+data_file[1:4] <- lapply(data_file[1:4], as.factor)
+```
+
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition, session) %>%
+  get_summary_stats(z_snr,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+
+### Assumptions checks
+
+Normality of residuals assumption not met; but homoscedasticity assumption is met.
+One outlier is detected. 
+
+```{r}
+# ------ Assumptions check
+model <- lmer(as.formula("z_snr ~ condition * session + (1 | participant)"),
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+```
+
+#### Outliers correction
+
+Outliers are corrected using Winsorisation (see [Leys et al., 2019](https://biblio.ugent.be/publication/8619726)).
+
+```{r}
+# ------ Deal with outliers
+backup = data_file
+
+data_file$z_snr <-
+  Winsorize(data_file$z_snr,
+            val = quantile(data_file$z_snr, probs = c(0, 0.99)))
+
+check_outliers(model, method = "zscore")
+```
+
+#### Data transformation
+
+```{r}
+# ------ Transform data
+model <- lmer(as.formula("z_snr ~ condition * session + (1 | participant)"),
+              data = data_file)
+
+# Square-root
+data_file$sqrt_z_snr <- sqrt(data_file$z_snr + abs(min(data_file$z_snr)) + 1)
+model_sqrt <- lmer(sqrt_z_snr ~ condition * session + (1 | participant),
+                  data = data_file)
+check_normality(model_sqrt)
+
+```
+
+
+### Inferential
+
+No significant effect.
+
+Note that in the GLM, dof = 76 (insted of 38) in previous models because the participant-level variance is zero (to test: > summary(model_sqrt)$varcor), meaning that including participant as a random effect doesn't explain any variation in z_snr.
+This suggests that z_snr does not meaningfully vary across participants, making the random intercept redundant.
+Since the random effect is zero, model_sqrt behaves as a fixed-effects model, increasing the denominator dof (DenDF) from 38 to 76.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = sqrt_z_snr, wid = participant,
+             between = condition,
+             within = session,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+# GLM
+anova(model_sqrt, type = 3) 
+effectsize::eta_squared(model_sqrt)
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+ggplot(data_file,
+       aes(y = sqrt_z_snr,
+           x = condition,
+           col = session)) +
+  geom_point(aes(y = sqrt_z_snr),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = session),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  labs(y = "z scores",
+       x = "Condition",
+       color = "Session",
+       fill = "Session",
+       subtitle = "EEG data") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  geom_hline(yintercept = -0.329, color = "darkgray", alpha = 0.5) +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat")) +
+  scale_y_continuous(name = "z scores", breaks = seq(from = -2, to = 5, by = 1), limits = c(-2, 5)) +
+  apa7
+```
+
+# Clapping (learning)
+
+## Load data
+
+```{r}
+# ------ DATA LOADING
+# ------ Indicate data path
+path_asynch = gsub("1_code/", "",
+       here("2_output/data/4_final/clap/asynchrony/"))
+
+# ------ List all files
+list_files <- matrix(list.files(path = path_asynch, pattern = "asynch.csv"),
+                    byrow = TRUE) 
+
+# ------ Load data
+data_file <- data.frame()
+
+for (participant in 1:nrow(list_files)) {
+  
+  file_path <- paste(path_asynch, list_files[participant], sep = "/")
+  
+  participant_file <- read_delim(file_path,
+                                 delim = guess_delim(file_path), 
+                                 show_col_types = FALSE)
+  
+  participant_row <- participant_file[1, 1:3]
+  
+  participant_row$signed_asynchrony <- 
+    mean(participant_file$signed_asynchrony, na.rm = TRUE)
+  
+  participant_row$r_asynch <- 
+    mean(participant_file$r_asynch, na.rm = TRUE)  
+  
+  data_file <- rbind(data_file, participant_row)
+  
+}
+
+# ------ Keep only relevant participants
+data_file <- 
+  data_file[which(data_file$participant %in% 
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+# ------ Prepare data
+# Change data format
+data_file[1:3] <- lapply(data_file[1:3], as.factor)
+```
+
+
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition) %>%
+  get_summary_stats(signed_asynchrony,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+
+### Assumptions checks
+
+Normality of residuals and homoscedasticity assumptions are met.
+No outlier is detected.
+
+```{r}
+# ------ Assumptions check
+model <- lm(signed_asynchrony ~ condition,
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+
+```
+
+### Inferential
+
+No significant effect.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = signed_asynchrony, wid = participant,
+             between = condition,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+# TOST
+data_wide <- data_file %>%
+  pivot_wider(
+    names_from = condition,
+    values_from = signed_asynchrony,
+    names_prefix = "condition_"
+  )
+
+tsum_TOST(m1 = mean(data_wide$condition_2, na.rm = TRUE),
+          sd1 = sd(data_wide$condition_2, na.rm = TRUE),
+          n1 = 20,
+          m2 = mean(data_wide$condition_2, na.rm = TRUE),
+          sd2 = sd(data_wide$condition_2, na.rm = TRUE),
+          n2 = 20,
+          r12 = cor(data_wide$condition_2[1:20], data_wide$condition_3[21:40]),
+          hypothesis = "EQU",
+          paired = FALSE,
+          eqb = 0.01, # based on Rose et al. (2021)
+          eqbound_type = "raw")
+
+# GLM
+anova(model)
+effectsize::eta_squared(model)
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+ggplot(data_file,
+       aes(y = signed_asynchrony,
+           x = condition,
+           col = condition)) +
+  geom_point(aes(y = signed_asynchrony),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = condition),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  labs(y = "Signed Asynchrony",
+       x = "Condition") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat")) +
+  guides(color = "none", fill = "none") +
+  apa7
+```
+
+# Clapping (learning stability)
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition) %>%
+  get_summary_stats(r_asynch,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+### Assumptions checks
+
+Normality of residuals is not met. 
+Homoscedasticity assumption is met.
+One outlier is detected.
+
+```{r}
+# ------ Assumptions check
+model <- lm(r_asynch ~ condition,
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+
+```
+
+#### Outliers correction
+
+Outlier is corrected using Winsorisation (see [Leys et al., 2019](https://biblio.ugent.be/publication/8619726)).
+
+```{r}
+# ------ Deal with outliers
+data_file$r_asynch <-
+  Winsorize(data_file$r_asynch,
+            val = quantile(data_file$r_asynch, probs = c(0.02, 1)))
+
+model <- lm(r_asynch ~ condition, data = data_file)
+check_outliers(model, method = "zscore")
+check_normality(model)
+check_heteroscedasticity(model)
+```
+
+#### Data transformation
+The data is transformed using a rank-based inverse normal transformation. 
+```{r}
+# ------ Transform data
+
+# Rank-based inverse normal transformation 
+data_file <- data_file %>%
+  mutate(r_asynch_norm = orderNorm(r_asynch)$x.t)
+
+model_rint <- lm(r_asynch_norm ~ condition, data = data_file)
+check_normality(model_rint)
+
+```
+
+### Inferential
+
+No significant effect.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = r_asynch_norm, wid = participant,
+             between = condition,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+ggplot(data_file,
+       aes(y = r_asynch,
+           x = condition,
+           col = condition)) +
+  geom_point(aes(y = r_asynch),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = condition),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  labs(y = "Vector Strength of the Asynchrony",
+       x = "Condition") +
+  #geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat")) +
+  guides(color = "none", fill = "none") +
+  apa7
+```
+
+
+
+# Stepping (learning)
+
+## Load data
+
+```{r}
+# ------ DATA LOADING
+# ------ Indicate data path
+path_asynch = gsub("1_code/", "",
+       here("2_output/data/4_final/step/asynchrony/"))
+
+# ------ List all files
+list_files <- matrix(list.files(path = path_asynch, pattern = ".csv"),
+                    byrow = TRUE) 
+
+# ------ Load data
+data_file <- data.frame()
+
+for (participant in 1:nrow(list_files)) {
+  
+  file_path <- paste(path_asynch, list_files[participant], sep = "/")
+  
+  participant_file <- read_delim(file_path,
+                                 delim = guess_delim(file_path), 
+                                 show_col_types = FALSE)
+  
+  participant_row <- participant_file[1, 1:3]
+  
+  participant_row$signed_asynchrony <- 
+    mean(participant_file$signed_asynchrony, na.rm = TRUE)
+  
+  participant_row$r_asynch <- 
+    mean(participant_file$r_asynch, na.rm = TRUE)  
+  
+  data_file <- rbind(data_file, participant_row)
+  
+}
+
+# ------ Keep only relevant participants
+data_file <- 
+  data_file[which(data_file$participant %in% 
+                    c(participant_pool$african_duple,
+                      participant_pool$african_triple)), ]
+
+# ------ Prepare data
+# Change data format
+data_file[1:3] <- lapply(data_file[1:3], as.factor)
+```
+
+
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition) %>%
+  get_summary_stats(signed_asynchrony,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+
+### Assumptions checks
+
+Normality of residuals and homoscedasticity assumptions are met.
+No outlier is detected.
+
+```{r}
+# ------ Assumptions check
+model <- lm(signed_asynchrony ~ condition,
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+```
+
+### Inferential
+
+No significant effect.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = signed_asynchrony, wid = participant,
+             between = condition,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+# TOST
+data_wide <- data_file %>%
+  pivot_wider(
+    names_from = condition,
+    values_from = signed_asynchrony,
+    names_prefix = "condition_"
+  )
+
+tsum_TOST(m1 = mean(data_wide$condition_2, na.rm = TRUE),
+          sd1 = sd(data_wide$condition_2, na.rm = TRUE),
+          n1 = 20,
+          m2 = mean(data_wide$condition_2, na.rm = TRUE),
+          sd2 = sd(data_wide$condition_2, na.rm = TRUE),
+          n2 = 20,
+          r12 = cor(data_wide$condition_2[1:20], data_wide$condition_3[21:40]),
+          hypothesis = "EQU",
+          paired = FALSE,
+          eqb = 0.01, # based on Rose et al. (2021)
+          eqbound_type = "raw")
+
+# GLM
+anova(model)
+effectsize::eta_squared(model)
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+ggplot(data_file,
+       aes(y = signed_asynchrony,
+           x = condition,
+           col = condition)) +
+  geom_point(aes(y = signed_asynchrony),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = condition),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  labs(y = "Signed Asynchrony",
+       x = "Condition") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat")) +
+  guides(color = "none", fill = "none") +
+  apa7
+```
+
+# Stepping (learning stability)
+## Stats
+
+### Descriptives
+
+```{r}
+# ------ STATISTICS
+# ------ Descriptive
+stat_descr <-
+  data_file %>%
+  group_by(condition) %>%
+  get_summary_stats(r_asynch,
+                    type = "mean_sd")
+print(stat_descr)
+
+```
+
+### Assumptions checks
+
+Normality of residuals and homoscedasticity assumptions are not met. 
+One outlier is detected.
+
+```{r}
+# ------ Assumptions check
+model <- lm(r_asynch ~ condition,
+              data = data_file)
+
+check_normality(model)
+check_heteroscedasticity(model)
+
+# ------ Identify outliers
+check_outliers(model, method = "zscore")
+
+```
+
+#### Outliers correction
+
+Outlier is corrected using Winsorisation (see [Leys et al., 2019](https://biblio.ugent.be/publication/8619726)).
+
+```{r}
+# ------ Deal with outliers
+data_file$r_asynch <-
+  Winsorize(data_file$r_asynch,
+            val = quantile(data_file$r_asynch, probs = c(0.03, 1), na.rm = TRUE))
+
+model <- lm(r_asynch ~ condition, data = data_file)
+check_outliers(model, method = "zscore")
+check_normality(model)
+check_heteroscedasticity(model)
+```
+
+#### Data transformation
+The data is transformed using a rank-based inverse normal transformation. 
+```{r}
+# ------ Transform data
+
+# Rank-based inverse normal transformation 
+data_file <- data_file %>%
+  mutate(r_asynch_norm = orderNorm(r_asynch)$x.t)
+
+model_rint <- lm(r_asynch_norm ~ condition, data = data_file)
+check_normality(model_rint)
+
+```
+
+### Inferential
+
+No significant effect.
+
+```{r}
+# ------ Inferential
+# Omnibus test
+data_file %>%
+  anova_test(dv = r_asynch_norm, wid = participant,
+             between = condition,
+             effect.size = "pes") %>%
+  get_anova_table()
+
+```
+
+## Plot
+
+```{r}
+# ------ PLOT
+ggplot(data_file,
+       aes(y = r_asynch_norm,
+           x = condition,
+           col = condition)) +
+  geom_point(aes(y = r_asynch_norm),
+             alpha = 0.5,
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.15,
+                                             jitter.height = 0,
+                                             dodge.width = 0.3)) +
+  geom_boxplot(width = 0.3,
+               alpha = 0,
+               lwd = 1) +
+  geom_flat_violin(aes(fill = condition),
+                   position = position_nudge(x = .2, y = 0),
+                   alpha = .5) +
+  labs(y = "Vector Strength of the Asynchrony",
+       x = "Condition") +
+  #geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  scale_x_discrete(labels = c("Three-beat", "Four-beat")) +
+  guides(color = "none", fill = "none") +
+  apa7
+```
+
+
+
