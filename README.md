@@ -9,7 +9,10 @@
 ## General info
 Scripts for the MeterLearning_Motor project.
 This is a programmatic registered report that received in-principle acceptance by PCI-RR: [https://rr.peercommunityin.org/articles/rec?id=646](https://rr.peercommunityin.org/articles/rec?id=646).
-The associated rawn and processed data can be found [here](https://zenodo.org/doi/10.5281/zenodo.10221480).
+The associated raw and processed data can be found [here](https://zenodo.org/doi/10.5281/zenodo.10221480).  
+Following the project structure below,  
+$\hspace{25pt}$ the "plots.zip" should be unzipped in the folder: 2_output/plots  
+$\hspace{25pt}$ the "4_final.zip" should be unzipped in the folder: 2_output/data/4_final
 
 ## Requirements
 
