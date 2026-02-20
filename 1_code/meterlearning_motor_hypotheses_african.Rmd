@@ -132,7 +132,7 @@ data_file <-
 
 # ------ Keep only relevant data
 if (analysis_type == 1 || analysis_type == 3) { 
-  # # Only keep 2 meter-related frequencies in the four-beat meter
+  # Only keep 2 meter-related frequencies in the four-beat meter
   data_file <- data_file %>%
     filter(    
       (condition == 2 & metrical_interp == 2) |
@@ -244,8 +244,12 @@ if (analysis_type == 1 || analysis_type == 3 || analysis_type == 7) {
   check_outliers(model, method = "zscore")
 }
 
+
 # save data_file for paper figure (with outlier correction)
-write.csv(data_file, paste0("/Users/emmanuelcoulon/Documents/MATLAB/PROJECTS/meterlearning_motor/2_output/plots/paper/data_file_eeg_grp1_analysis_type",analysis_type,"_outliers_corrected.csv"))
+path_outlier_z_scores =  gsub("1_code/","",
+                              here("2_output/data/4_final/eeg/z_score_fft/outliers_correction/")) 
+write.csv(data_file, 
+          paste0(path_outlier_z_scores,"data_file_eeg_grp1_analysis_type",analysis_type,"_outliers_corrected.csv"))
 
 ```
 
@@ -726,6 +730,7 @@ ggplot(data_file,
   apa7
 ```
 
+# --------------------------------------
 # Clapping (learning)
 
 ## Load data
@@ -984,7 +989,7 @@ ggplot(data_file,
 ```
 
 
-
+# --------------------------------------
 # Stepping (learning)
 
 ## Load data
