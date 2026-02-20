@@ -1,4 +1,4 @@
-# Meter Leaning Motor
+# Meter Learning Motor
 
 ## Table of contents
 * [General info](#general-info)
