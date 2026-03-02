@@ -815,7 +815,6 @@ check_outliers(model, method = "zscore")
 ```
 
 ### Inferential
-
 No significant effect.
 
 ```{r}
@@ -838,8 +837,8 @@ data_wide <- data_file %>%
 tsum_TOST(m1 = mean(data_wide$condition_2, na.rm = TRUE),
           sd1 = sd(data_wide$condition_2, na.rm = TRUE),
           n1 = 20,
-          m2 = mean(data_wide$condition_2, na.rm = TRUE),
-          sd2 = sd(data_wide$condition_2, na.rm = TRUE),
+          m2 = mean(data_wide$condition_3, na.rm = TRUE),
+          sd2 = sd(data_wide$condition_3, na.rm = TRUE),
           n2 = 20,
           r12 = cor(data_wide$condition_2[1:20], data_wide$condition_3[21:40]),
           hypothesis = "EQU",
@@ -1096,8 +1095,8 @@ data_wide <- data_file %>%
 tsum_TOST(m1 = mean(data_wide$condition_2, na.rm = TRUE),
           sd1 = sd(data_wide$condition_2, na.rm = TRUE),
           n1 = 20,
-          m2 = mean(data_wide$condition_2, na.rm = TRUE),
-          sd2 = sd(data_wide$condition_2, na.rm = TRUE),
+          m2 = mean(data_wide$condition_3, na.rm = TRUE),
+          sd2 = sd(data_wide$condition_3, na.rm = TRUE),
           n2 = 20,
           r12 = cor(data_wide$condition_2[1:20], data_wide$condition_3[21:40]),
           hypothesis = "EQU",
